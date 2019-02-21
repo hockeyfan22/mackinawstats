@@ -1,0 +1,126 @@
+---
+title: "muzzin"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+NHL = read_csv(here("shots20192.csv"))
+Leafs = NHL %>% 
+  filter(teamCode == "TOR")
+```
+
+```{r}
+Leafs %>% 
+  group_by(shooterName) %>% 
+  summarize(shotGeneratedRebound = mean(shotGeneratedRebound),
+            shotDistance = mean(shotDistance),
+            xGoal = mean(xGoal),
+            xPlayContinuedOutsideZone = mean(xPlayContinuedOutsideZone),
+            xShotWasOnGoal = mean(xShotWasOnGoal),
+            shotWasOnGoal = mean(shotWasOnGoal))
+Leafs %>% 
+  filter(event == "MISS") %>% 
+  group_by(shooterName) %>% 
+  count(event) %>% 
+  arrange(desc(n))
+```
+
+```{r}
+Leafs %>% 
+  mutate(game = group_indices(Leafs, game_id)) %>% 
+  filter(game>49) %>% 
+  group_by(shooterName) %>% 
+  filter(event == "MISS") %>% 
+  count(event) %>% 
+  arrange(desc(n))
+
+Leafs %>% 
+  mutate(game = group_indices(Leafs, game_id)) %>% 
+  filter(game>49) %>% 
+  group_by(shooterName) %>% 
+    summarize(shotGeneratedRebound = mean(shotGeneratedRebound),
+            shotDistance = mean(shotDistance),
+            xGoal = mean(xGoal),
+            xPlayContinuedOutsideZone = mean(xPlayContinuedOutsideZone),
+            xShotWasOnGoal = mean(xShotWasOnGoal),
+            shotWasOnGoal = mean(shotWasOnGoal)) %>% 
+Leafs %>% 
+  mutate(game = group_indices(Leafs, game_id)) %>% 
+  filter(game>49) %>% 
+  group_by(shooterName) %>% 
+  summarize(shotWasOnGoal = round(mean(shotWasOnGoal)*100)) %>% 
+  mutate(miss = (100-shotWasOnGoal)) %>% 
+  arrange(desc(miss)) %>% 
+  head(6) %>%
+  ggplot(aes(reorder(shooterName,miss),miss, fill = shooterName)) +
+  geom_col() +
+  coord_flip() +
+  geom_text(aes(label = paste0(miss,"%")), position = position_stack(vjust = 0.5),
+colour = "white", size = 4, family = "Roboto Condensed",
+show.legend = F) +
+  theme(legend.position="none") +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Percent of shots that miss the net", title = "Percent of shots that miss the net", subtitle = "Since Muzzin debut on 2/1, data from Moneypuck.com")
+  
+```
+
+```{r}
+Leafs %>% 
+  mutate(game = group_indices(Leafs, game_id)) %>% 
+  filter(game>49) %>% 
+  group_by(shooterName) %>% 
+  summarize(shotWasOnGoal = round(mean(shotWasOnGoal)*100)) %>% 
+  mutate(miss = (100-shotWasOnGoal)) %>% 
+  arrange(desc(miss)) %>% 
+  head(6) %>%
+  ggplot(aes(reorder(shooterName,miss),miss)) +
+  scale_fill_manual(values=c("0E3086", "1A3E98", "#3055B2", "4A70CE", "#537ADB", "#6489E5")) +
+  geom_col() +
+  coord_flip() +
+  geom_text(aes(label = paste0(miss,"%")), position = position_stack(vjust = 0.5),
+colour = "white", size = 4, family = "Roboto Condensed",
+show.legend = F) +
+  theme(legend.position="none") +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Percent of shots that miss the net", title = "Percent of shots that miss the net", subtitle = "Since Muzzin debut on 2/1, data from Moneypuck.com")
+```
+
+```{r}
+NHL %>% 
+  group_by(playerPositionThatDidEvent) %>% 
+  summarize(shotWasOnGoal = round(mean(shotWasOnGoal)*100)) %>% 
+  mutate(miss = (100-shotWasOnGoal)) %>%
+```
+

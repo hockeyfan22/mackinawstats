@@ -1,0 +1,196 @@
+---
+title: "post"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+post = read_csv(here("post.csv"))
+```
+
+#lets just select the post metrics
+```{r}
+post_clean = post %>%
+  select(Player, Season, Pos, GP, S, G, `MsS Cross`, `MsS Post`, `MsS Over`, `MsS Wide`) %>% 
+  filter(GP>20) %>% 
+  mutate(iron = `MsS Cross` + `MsS Post`)
+
+post_clean %>% 
+  group_by(Player) %>% 
+  summarize(G = sum(G)) %>% 
+  arrange()
+
+post_clean %>% 
+  filter(Player == "Par Lindholm") %>% 
+  View() 
+  
+
+#over the past 3 years - who has hit the most posts
+post_clean %>% 
+  group_by(Player) %>% 
+  summarize(iron = sum(iron)) %>% 
+  arrange(desc(iron)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(Player,iron),iron, fill = Player)) +
+  geom_col() +
+  geom_text(aes(label = iron), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Post or Crossbars hit", title = "The leafs who have hit the most iron", subtitle = "Post or Crossbar hits in the past 3 seasons (2015 - present)")
+
+#per shot?
+#over the past 3 years - who has hit the most posts
+post_clean %>% 
+  mutate(ironpershot = iron/S*100) %>% 
+  group_by(Player) %>% 
+  summarize(ironpershot = round(mean(ironpershot),2),
+            S = sum(S)) %>% 
+  arrange(desc(ironpershot)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(Player,ironpershot),ironpershot, fill = Player)) +
+  geom_col() +
+  geom_text(aes(label = ironpershot), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Post or crossbar hit per 100 shots", title = "Leafs who have hit the most iron, per shot basis", subtitle = "Post or Crossbar hits per 100 shots in the past 3 seasons (2015 - present)")
+
+#missing wide or over the net
+post_clean %>% 
+  mutate(Miss = `MsS Over` + `MsS Wide`) %>% 
+  group_by(Player) %>% 
+  summarize(Miss = sum(Miss)) %>% 
+  arrange(desc(Miss)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(Player,Miss), Miss, fill = Player)) +
+  geom_col() +
+  geom_text(aes(label = Miss), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Shots missing the net (High or Wide)", title = "Hit the net! Leafs with the most misses", subtitle = "Missing the net high or wide, past 3 seasons")
+
+
+#misses per shot?
+post_clean %>% 
+  mutate(Miss = `MsS Over` + `MsS Wide`) %>% 
+  mutate(misspershot = Miss/S*100) %>% 
+  group_by(Player, Pos) %>% 
+  summarize(misspershot = round(mean(misspershot)),
+            S = sum(S)) %>% 
+  arrange(desc(misspershot)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(Player,misspershot),misspershot, fill  = Player)) +
+  geom_col() +
+  geom_text(aes(label = misspershot), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Misses per 100 shots", title = "Hit the net! Leafs with the most misses per 100 shots", subtitle = "Missing the net high or wide, past 3 seasons")
+
+#seperate by F and D
+#F
+post_clean %>% 
+  mutate(Miss = `MsS Over` + `MsS Wide`) %>% 
+  mutate(misspershot = Miss/S*100) %>% 
+  group_by(Player, Pos) %>% 
+  summarize(misspershot = round(mean(misspershot)),
+            S = sum(S)) %>% 
+  filter(Pos == "C" | Pos == "L" | Pos == "R") %>%
+  arrange(desc(misspershot)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(Player,misspershot),misspershot, fill = Player)) +
+  geom_col() +
+  geom_text(aes(label = misspershot), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Misses per 100 shots", title = "Hit the net! Leafs forwards with the most misses per 100 shots", subtitle = "Missing the net high or wide, past 3 seasons")
+  
+  
+
+```
+#trying a new format again
+```{r}
+post_clean %>% 
+  mutate(Miss = `MsS Over` + `MsS Wide`) %>% 
+  mutate(misspershot = Miss/S*100) %>% 
+  group_by(Player, Pos) %>% 
+  summarize(misspershot = round(mean(misspershot)),
+            S = sum(S)) %>% 
+  filter(Pos == "C" | Pos == "L" | Pos == "R") %>%
+  arrange(desc(misspershot)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(Player,misspershot),misspershot, fill = Player)) +
+  geom_col() +
+  geom_text(aes(label = misspershot), position = position_stack(vjust = 0.5),
+colour = "white", size = 2.5, family = "Decima Mono Pro",
+show.legend = F) +
+  coord_flip() +
+  theme_fivethirtyeight() +
+theme(axis.title = element_text(family = "Atlas Grotesk Regular"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Atlas Grotesk Medium"),
+legend.text = element_text(family = "Atlas Grotesk Regular"),
+text = element_text(family = "Decima Mono Pro")) +
+guides(fill = guide_legend(reverse = T)) +
+  labs(x="", y ="Misses per 100 shots", title = "Hit the net! Leafs forwards with the most misses per 100 shots", subtitle = "Missing the net high or wide, past 3 seasons") +
+  theme(legend.position="none")
+```
+

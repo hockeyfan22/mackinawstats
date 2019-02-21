@@ -1,0 +1,90 @@
+---
+title: "historic shot data"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+NHL = read_csv(here("shots20192.csv"))
+NHL2 = read_csv(here("shots_2007-2017.csv"))
+Shots = rbind(NHL2,NHL)
+```
+
+```{r}
+#raw Expected goals over time
+Shots %>% 
+  filter(season != 2018) %>% 
+  filter(playerPositionThatDidEvent != "G") %>% 
+  mutate(forward = if_else(playerPositionThatDidEvent %in% c("L","R","D"),"F","D")) %>% 
+  mutate(xGoal = case_when(season == 2012 ~ xGoal*1.7,
+                           season == 2018 ~ xGoal*1.4,
+                           TRUE ~ xGoal)) %>% 
+  group_by(forward, season) %>%
+  summarize(sumxG = sum(xGoal),
+            meanxG = mean(xGoal)) %>% 
+  ggplot(aes(season, sumxG, group = forward, color = forward)) +
+  geom_line(size=3) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Expected Goals by position, over time", subtitle="Data from Moneypuck.com",x = "Season", y="Expected Goals")+
+  scale_x_continuous(breaks=c(2007,2010, 2012, 2015, 2017)) +
+  theme(legend.position="none")
+```
+
+```{r}
+#Accounting for minute of game time (Expected Goals per 60 minutes)
+Shots_per60 = Shots %>% 
+  filter(playerPositionThatDidEvent != "G") %>% 
+  mutate(forward = if_else(playerPositionThatDidEvent %in% c("L","R","D"),"F","D")) %>% 
+  group_by(forward, season) %>% 
+  summarize(sumxG = sum(xGoal))
+
+Time = Shots %>% 
+  group_by(game_id, season) %>% 
+  summarize(xG = sum(xGoal)) %>% 
+  mutate(minutesingame = rep(60)) %>% 
+  group_by(season) %>% 
+  summarize(minutes = sum(minutesingame))
+
+Combination = left_join(Shots_per60, Time, by = "season") %>% 
+  mutate(games = minutes/60) %>% 
+  mutate(xGper60 = sumxG/games)
+
+Combination %>% 
+  ggplot(aes(season, xGper60, group = forward, color = forward)) +
+  geom_line(size=3) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Expected Goals per 60 minutes by position, over time", subtitle="Data from Moneypuck.com",x = "Season", y="Expected Goals")+
+  scale_x_continuous(breaks=c(2007,2010, 2012, 2015, 2018)) +
+  theme(legend.position="none")
+  
+```
+

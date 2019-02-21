@@ -1,0 +1,95 @@
+---
+title: "leafs d - pietrangelo"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(ggalt)
+
+Leafs = read_csv(here("leafs d.csv"))
+theme_set(theme_light())
+```
+#Evaluating how Pietrangelo would fit on the leafs using Expected Goals
+```{r}
+
+Leafs %>% 
+  group_by(player,Team) %>% 
+  mutate(GP2 = sum(GP)) %>% 
+  filter(GP2>100) %>% 
+  summarize(onxG_diff = mean(onxG_diff)) %>% 
+  arrange(desc(onxG_diff)) %>% 
+  ggplot(aes(reorder(player,onxG_diff),onxG_diff,fill = Team))+
+  geom_col()+
+  coord_flip()+
+  labs(x="", y="Expected goals differential over the past 3 seasons", title = "Expected Goals by Leafs D corps") +
+theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none")
+
+Leafs %>% 
+  group_by(player,Team) %>% 
+  mutate(GP2 = sum(GP)) %>% 
+  filter(GP2>100) %>% 
+  summarize(onxGA = mean(onxGA)) %>% 
+  arrange(desc(onxGA)) %>% 
+  ggplot(aes(reorder(player,onxGA),onxGA,fill = Team))+
+  geom_col()+
+  coord_flip()+
+  labs(x="", y="Expected goals against over the past 3 seasons", title = "Expected Goals Against by Leafs D corps") +
+theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none")
+
+Leafs %>% 
+  group_by(player,Team) %>% 
+  mutate(GP2 = sum(GP)) %>% 
+  filter(GP2>100) %>% 
+  summarize(onxG_diff = mean(onxG_diff),
+            onxGF = mean(onxGF),
+            onxGA = mean(onxGA)) %>% 
+  gather(onxGF,onxGA, key = "metric", value = "value" ) %>%
+  ungroup() %>% 
+  mutate(player = fct_reorder(player, onxG_diff)) %>% 
+  mutate(value = round(value,2)) %>% 
+  ggplot(aes(player, value, fill = metric)) +
+  geom_col()+
+  geom_text(aes(label = value), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip()+
+  theme_economist()+
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(x="", y="Expected On Ice Goals For/Against", title = "GF/GA Leafs D corp")
+
+
+```
+

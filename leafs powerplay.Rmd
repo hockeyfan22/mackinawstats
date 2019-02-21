@@ -1,0 +1,138 @@
+---
+title: "leafs powerplay"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(RColorBrewer)
+Powerplay = read_csv(here("Powerplay.csv"))
+theme_set(theme_light())
+               
+```
+#Analyzing the leafs powerplay in 10 game chunks
+```{r}
+Leafs = Powerplay %>% 
+  filter(Team == "Toronto Maple Leafs") %>% 
+  select(GP, TOI, CF, CA, GF,GA,HDCF,HDCA,`SH%`,PDO, Chunk)
+
+#Taking a look at pure production
+
+Leafs %>% 
+  ggplot(aes(Chunk, GF)) +
+  geom_col() +
+  geom_text(aes(label = GF), position = position_stack(vjust = 0.5),
+colour = "white", size = 5, family = "Roboto Condensed",
+show.legend = F)  +
+  theme(legend.position="none") +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="10 game segments", y ="Goals For on the Powerplay", title = "Raw Goals For on the powerplay has been trending down")
+
+#production on a by-minute basis
+Leafs %>% 
+  mutate(GFpermin = (GF/TOI)*100) %>%
+  mutate(GFpermin = round(GFpermin)) %>% 
+  ggplot(aes(Chunk, GFpermin)) +
+  geom_col() +
+  geom_text(aes(label = GFpermin), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F)  +
+  theme(legend.position="none") +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="10 game segments", y ="Goals For Per Minute (x100) on the Powerplay", title = "On a per minute basis we see a different story")
+
+#a look at SH%
+Leafs %>% 
+  ggplot(aes(Chunk,`SH%`, fill = Chunk)) +
+  geom_col()
+
+#are we generating offense at the same rate
+Leafs %>% 
+  mutate(CFpermin = CF/TOI,
+         HDCFpermin = HDCF/TOI) %>%
+  mutate(CFpermin = round(CFpermin,2)) %>% 
+  ggplot(aes(Chunk,CFpermin)) +
+  geom_col() +
+  geom_text(aes(label = CFpermin), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Corsi For Per Minute", title = "Corsi For per minute on the powerplay")
+
+Leafs %>% 
+  mutate(CFpermin = CF/TOI,
+         HDCFpermin = HDCF/TOI) %>% 
+  mutate(HDCFpermin = round(HDCFpermin,2)) %>% 
+  ggplot(aes(Chunk,HDCFpermin)) +
+           geom_col()+
+geom_text(aes(label = HDCFpermin), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="HDCF For Per Minute", title = "High Danger Corsi For per minute on the powerplay")
+```
+
+```{r}
+Leafs %>% 
+   mutate(GFpermin = (GF/TOI)*100) %>% 
+  gather(metric, value, `SH%`, GFpermin) %>% 
+  group_by(Chunk) %>% 
+  ggplot(aes(Chunk,value, color = metric, group = metric)) +
+  geom_line() +
+  geom_line(size = 1.5) +
+theme_economist() + scale_colour_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom",
+legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+  labs(title = "Goals For Per Minute Mirrors Shooting Percentage",y="GF per minute/SH%")
+
+```
+
+
+
+

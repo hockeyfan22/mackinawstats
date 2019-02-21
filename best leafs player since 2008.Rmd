@@ -1,0 +1,101 @@
+---
+title: "Best Leafs Player Since 2008"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+NHL = read_csv(here("NHL.csv"), na = c("--","NA")) %>% 
+  mutate(Season = as.numeric(Season))
+
+```
+#filter to the leafs
+#prorate 2019 statistics
+#plot historical data
+
+```{r}
+
+Leafs = NHL %>% 
+  filter(Team == "TOR") %>%
+  filter(GP > 20) %>% 
+  mutate(G = case_when(Season == 2019 ~ ((G/GP)*82),
+                       TRUE ~ as.numeric(G))) %>% 
+  mutate(A = case_when(Season == 2019 ~ ((A/GP)*82),
+                       TRUE ~ as.numeric(G))) %>% 
+  mutate(P = case_when(Season == 2019 ~ ((P/GP)*82),
+                       TRUE ~ as.numeric(P))) %>% 
+  mutate(G = round(G)) %>% 
+  mutate(P = round(P)) %>% 
+  arrange(desc(P)) %>% 
+  head(10) %>% 
+  mutate(Player = paste(Player,Season)) %>% 
+  mutate(Player = fct_reorder(Player, P)) 
+
+Leafs %>% 
+  ggplot(aes(Player,P, fill = Season))+
+  geom_col() +
+  geom_text(aes(label = P), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Points", title = "Phil Kessel still has the leafs best season, but not for long", subtitle = "Leafs point production with prorated 2019 numbers")
+ 
+```
+#with a different formula
+```{r}
+Leafs = NHL %>% 
+  filter(Team == "TOR") %>%
+  filter(GP > 20) %>% 
+  mutate(G = case_when(Season == 2019 ~ (G+(G/GP)*43),
+                       TRUE ~ as.numeric(G))) %>% 
+  mutate(A = case_when(Season == 2019 ~ (A+(A/GP)*43),
+                       TRUE ~ as.numeric(G))) %>% 
+  mutate(P = case_when(Season == 2019 ~ (P+(P/GP)*43),
+                       TRUE ~ as.numeric(P))) %>% 
+  mutate(G = round(G)) %>% 
+  mutate(P = round(P)) %>% 
+  arrange(desc(P)) %>% 
+  head(10) %>% 
+  mutate(Player = paste(Player,Season)) %>% 
+  mutate(Player = fct_reorder(Player, P)) 
+
+Leafs %>% 
+  ggplot(aes(Player,P, fill = Season))+
+  geom_col() +
+  geom_text(aes(label = P), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Points", title = "Phil Kessel still has the leafs best season at 5v5, but not for long", subtitle = "Leafs point production with prorated 2019 numbers")
+```
+

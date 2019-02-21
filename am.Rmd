@@ -1,0 +1,33 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+
+NHL = read_csv(here("am.csv"))
+```
+
+```{r}
+
+NHL %>% 
+  ggplot(aes(Metric,Value, fill= Metric)) +
+  geom_col() +
+  facet_wrap(~Metric) +
+  coord_flip() +
+  theme(legend.position="none") +
+  labs(title = "Auston Matthews Metrics")
+         
+```
+

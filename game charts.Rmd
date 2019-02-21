@@ -1,0 +1,43 @@
+---
+title: "Leafs xG chart"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+
+Islanders = read_csv(here("Islanders 12.29 xG.csv"))
+theme_set(theme_light())
+
+```
+
+#Normalied Expected Goals chart (update after each game)
+```{r}
+Islanders %>% 
+  mutate(xGnorm = (xG - mean(xG))/sd(xG)) %>% 
+  mutate(levels = ifelse(xGnorm < 0, "below", "above")) %>% 
+  mutate(Player = fct_reorder(Player,xGnorm)) %>% 
+  ggplot(aes(Player, xGnorm)) + 
+  geom_bar(stat='identity', aes(fill=levels), width=.5)  +
+  scale_fill_manual(name="xG", 
+                    labels = c("Above Average", "Below Average"), 
+                    values = c("above"="blue4", "below"="grey20")) + 
+  labs(subtitle="4 NYI - 0 TOR, December 29th, data from Moneypuck.com", 
+       title= "Normalized Expected Goals versus New York Islanders") + 
+  coord_flip()
+
+```
+
