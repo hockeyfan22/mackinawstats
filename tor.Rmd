@@ -1,0 +1,45 @@
+---
+title: "tor"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+Leafs = read_csv("https://raw.githubusercontent.com/hockeyfan22/mackinawstats/master/TOR.csv")
+```
+```{r}
+Leafs20185on5 = Leafs %>%
+  filter(season == "2018") %>% 
+  filter(situation == "5on5")
+
+Leafs20185on5 %>% 
+  mutate(rollingxG = rollmean(xGoalsPercentage,5, na.pad = "TRUE", align = "right")) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game,rollingxG, color = "#FA6866")) +
+  geom_line(size = 3) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Expected Goals Percentage at 5v5", subtitle="Data from Moneypuck.com",x = "Game Number", y="Expected Goals Percentage") +
+  theme(legend.position="none")
+```
+
