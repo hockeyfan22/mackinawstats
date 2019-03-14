@@ -1,0 +1,64 @@
+---
+title: "swarm interactive"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+library(plotly)
+
+shots = read_csv(here("all_teams.csv"))
+  
+five = shots %>% 
+  filter(situation == "5on5") %>% 
+  group_by(season, team) %>% 
+  summarize(avgxG = mean(xGoalsPercentage)) %>%
+  mutate(avgxG = round(avgxG*100,2))
+```
+```{r}
+team = filter(five, team == "TOR")
+
+staticplot = five %>%
+  ggplot(aes(season,avgxG, text = paste("team:", team))) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  geom_point(data = team, color = "#003E7E", size = 2, alpha = 1) +
+  geom_line(data = team, alpha = 0.5, linetype = 'dashed') +
+  scale_x_continuous(breaks=c(2008:2018)) +
+  expand_limits(y=35) +
+  theme_fivethirtyeight() +
+  labs(x = "Season", y="Expected Goals Percentage", title = "Expected Goals Percentage since 2008", subtitle = "Data from Moneypuck.com")
+
+interactiveplot = ggplotly(staticplot)
+interactiveplot
+
+interactiveplot$sizingPolicy$padding <- "0"
+htmlwidgets::saveWidget(
+  interactiveplot, "index.html", libdir = "lib",
+  title = "Beeswarm interactive",
+  selfcontained = FALSE
+)
+
+```
+
+
