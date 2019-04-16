@@ -1,0 +1,242 @@
+---
+title: "leafs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+
+shots = read_csv(here("shots3.7.csv"))
+```
+
+```{r}
+leafs_games_table = shots %>% 
+  filter(teamCode == "TOR") %>% 
+  select(game_id) %>% 
+  distinct() %>% 
+  mutate(game = row_number())
+
+leafsshots = shots %>% 
+  filter(teamCode == "TOR")
+```
+
+```{r}
+#morgan
+player = leafsshots %>% 
+  filter(shooterName == "Morgan Rielly")
+
+player %>% 
+  select(shooterName,game_id, event) %>% 
+  full_join(leafs_games_table, by = "game_id") %>%
+  mutate(goals = if_else(event == "GOAL", 1,0)) %>% 
+  mutate(shooterName = if_else(is.na(shooterName),"Morgan Rielly",shooterName)) %>% 
+  select(-game_id) %>%
+  group_by(shooterName,game) %>% 
+  summarize(goals = sum(goals)) %>%
+  mutate(goals = if_else(is.na(goals),0,goals)) %>% 
+  mutate(cumulative = cumsum(goals)) %>% 
+  mutate(image = "https://github.com/hockeyfan22/mackinawstats/raw/master/morgan.png") %>% 
+  ggplot(aes(game,cumulative)) +
+  geom_line(size = 2, color = "#FA6866") +
+  geom_image(aes(image=image), size=0.3) +
+    transition_reveal(game) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Morgan Rielly 2018-19 Goals",subtitle = "Data from Moneypuck.com",x = "Game", y="Goals") +
+  theme(legend.position="none")
+
+anim_save("morgan.gif")
+  
+      
+  
+```
+
+```{r}
+#marner
+player = leafsshots %>% 
+  filter(shooterName == "Mitchell Marner")
+
+player %>% 
+  select(shooterName,game_id, event) %>% 
+  full_join(leafs_games_table, by = "game_id") %>%
+  mutate(goals = if_else(event == "GOAL", 1,0)) %>% 
+  mutate(shooterName = if_else(is.na(shooterName),"Mitchell Marner",shooterName)) %>% 
+  select(-game_id) %>%
+  group_by(shooterName,game) %>% 
+  summarize(goals = sum(goals)) %>%
+  mutate(goals = if_else(is.na(goals),0,goals)) %>% 
+  mutate(cumulative = cumsum(goals)) %>% 
+  mutate(image = "https://github.com/hockeyfan22/mackinawstats/raw/master/morgan.png") %>% 
+  ggplot(aes(game,cumulative)) +
+  geom_line(size = 2, color = "#FA6866") +
+  geom_image(aes(image=image), size=0.3) +
+    transition_reveal(game) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Mitch Marner 2018-19 Goals",subtitle = "Data from Moneypuck.com",x = "Game", y="Goals") +
+  theme(legend.position="none")
+
+anim_save("marner.gif")
+```
+
+```{r}
+player = leafsshots %>% 
+  filter(shooterName == "Andreas Johnsson")
+
+player %>% 
+  select(shooterName,game_id, event) %>% 
+  full_join(leafs_games_table, by = "game_id") %>%
+  mutate(goals = if_else(event == "GOAL", 1,0)) %>% 
+  mutate(shooterName = if_else(is.na(shooterName),"Andreas Johnsson",shooterName)) %>% 
+  select(-game_id) %>%
+  group_by(shooterName,game) %>% 
+  summarize(goals = sum(goals)) %>%
+  mutate(goals = if_else(is.na(goals),0,goals)) %>% 
+  mutate(cumulative = cumsum(goals)) %>% 
+  mutate(image = "https://github.com/hockeyfan22/mackinawstats/raw/master/andreas.png") %>% 
+  ggplot(aes(game,cumulative)) +
+  geom_line(size = 2, color = "#FA6866") +
+  geom_image(aes(image=image), size=0.1) +
+    transition_reveal(game) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Andreas Johnsson 2018-19 Goals",subtitle = "Data from Moneypuck.com",x = "Game", y="Goals") +
+  theme(legend.position="none")
+
+anim_save("johnsson.gif")
+```
+
+```{r}
+player = leafsshots %>% 
+  filter(shooterName == "Auston Matthews")
+
+player %>% 
+  select(shooterName,game_id, event) %>% 
+  full_join(leafs_games_table, by = "game_id") %>%
+  mutate(goals = if_else(event == "GOAL", 1,0)) %>% 
+  mutate(shooterName = if_else(is.na(shooterName),"Auston Matthews",shooterName)) %>% 
+  select(-game_id) %>%
+  group_by(shooterName,game) %>% 
+  summarize(goals = sum(goals)) %>%
+  mutate(goals = if_else(is.na(goals),0,goals)) %>% 
+  mutate(cumulative = cumsum(goals)) %>% 
+  mutate(image = "https://github.com/hockeyfan22/mackinawstats/raw/master/mathews2.png") %>% 
+  ggplot(aes(game,cumulative)) +
+  geom_line(size = 2, color = "#FA6866") +
+  geom_image(aes(image=image), size=0.2) +
+    transition_reveal(game) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Auston Matthews 2018-19 Goals",subtitle = "Data from Moneypuck.com",x = "Game", y="Goals") +
+  theme(legend.position="none")
+
+anim_save("matthews.gif")
+```
+
+```{r}
+player = leafsshots %>% 
+  filter(shooterName == "John Tavares")
+
+player %>% 
+  select(shooterName,game_id, event) %>% 
+  full_join(leafs_games_table, by = "game_id") %>%
+  mutate(goals = if_else(event == "GOAL", 1,0)) %>% 
+  mutate(shooterName = if_else(is.na(shooterName),"John Tavares",shooterName)) %>% 
+  select(-game_id) %>%
+  group_by(shooterName,game) %>% 
+  summarize(goals = sum(goals)) %>%
+  mutate(goals = if_else(is.na(goals),0,goals)) %>% 
+  mutate(cumulative = cumsum(goals)) %>% 
+  mutate(image = "https://github.com/hockeyfan22/mackinawstats/raw/master/tav.png") %>% 
+  ggplot(aes(game,cumulative)) +
+  geom_line(size = 2, color = "#FA6866") +
+  geom_image(aes(image=image), size=0.2) +
+    transition_reveal(game) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "John Tavares 2018-19 Goals",subtitle = "Data from Moneypuck.com",x = "Game", y="Goals") +
+  theme(legend.position="none")
+
+anim_save("tavares.gif")
+```
+
+```{r}
+player = leafsshots %>% 
+  filter(shooterName == "Kasperi Kapanen")
+
+player %>% 
+  select(shooterName,game_id, event) %>% 
+  full_join(leafs_games_table, by = "game_id") %>%
+  mutate(goals = if_else(event == "GOAL", 1,0)) %>% 
+  mutate(shooterName = if_else(is.na(shooterName),"Kasperi Kapanen",shooterName)) %>% 
+  select(-game_id) %>%
+  group_by(shooterName,game) %>% 
+  summarize(goals = sum(goals)) %>%
+  mutate(goals = if_else(is.na(goals),0,goals)) %>% 
+  mutate(cumulative = cumsum(goals)) %>% 
+  mutate(image = "https://github.com/hockeyfan22/mackinawstats/raw/master/kap.png") %>% 
+  ggplot(aes(game,cumulative)) +
+  geom_line(size = 2, color = "#FA6866") +
+  geom_image(aes(image=image), size=0.15) +
+    transition_reveal(game) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(title = "Kasperi Kapanen 2018-19 Goals",subtitle = "Data from Moneypuck.com",x = "Game", y="Goals") +
+  theme(legend.position="none")
+
+anim_save("kap.gif")
+```
+

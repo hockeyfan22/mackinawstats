@@ -1,0 +1,143 @@
+---
+title: "blog"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+kap = read_csv("kaplog.csv")
+jon = read_csv("jonsonlog.csv")
+```
+
+```{r}
+#jonsson first
+
+
+jon %>% 
+  mutate(as.character(Season)) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, TOI, PTS, Season) %>% 
+  ggplot(aes(game,TOI, color = Season)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Andreas Johnsson TOI over time", subtitle = "Data from hockeyreference.com") + 
+  theme(legend.position="none")
+
+ggsave("Johnssontoi.png")
+
+jon %>% 
+  mutate(as.character(Season)) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, TOI, PTS, Season) %>% 
+  mutate(PTS2 = cumsum(PTS)) %>% 
+  ggplot(aes(game,PTS2, color = Season)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Andreas Johnsson PTS over time", subtitle = "Data from hockeyreference.com") + 
+  theme(legend.position="none")
+
+ggsave("JohnssonPTS.png")
+```
+
+
+```{r}
+#GIFSGIFSGIFS
+
+jon %>% 
+  mutate(as.character(Season)) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, TOI, PTS, Season) %>% 
+  ggplot(aes(game,TOI, color = Season)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Andreas Johnsson TOI over time", subtitle = "Data from hockeyreference.com") + 
+  theme(legend.position="none") +
+  transition_reveal(game)
+
+anim_save("jontoi.gif")
+
+jon %>% 
+  mutate(as.character(Season)) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, TOI, PTS, Season) %>% 
+  mutate(PTS2 = cumsum(PTS)) %>% 
+  ggplot(aes(game,PTS2, color = Season)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Andreas Johnsson PTS over time", subtitle = "Data from hockeyreference.com") + 
+  theme(legend.position="none") +
+  transition_reveal(game)
+
+anim_save("jonPTS.gif")
+```
+
+```{r}
+kap %>% 
+  mutate(as.character(Season)) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, TOI, PTS, Season) %>% 
+  ggplot(aes(game,TOI, color = Season)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Kasperi Kapanen TOI over time", subtitle = "Data from hockeyreference.com") + 
+  theme(legend.position="none") +
+  transition_reveal(game)
+
+anim_save("kaptoi.gif")
+
+kap %>% 
+  mutate(as.character(Season)) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, TOI, PTS, Season) %>% 
+  mutate(PTS2 = cumsum(PTS)) %>% 
+  ggplot(aes(game,PTS2, color = Season)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Kasperi Kapanen PTS over time", subtitle = "Data from hockeyreference.com") + 
+  theme(legend.position="none") +
+  transition_reveal(game)
+
+anim_save("kappts.gif")
+```
+
+```{r}
+jon %>% 
+  filter(G>18) %>%
+  mutate(p = sum(PTS)) %>% 
+  mutate(Goals = sum(G_1)) %>% 
+  mutate(Gi = n())
+
+kap %>% 
+  filter(Season == 2019) %>% 
+  filter(G<16) %>% 
+  mutate(goals = sum(G_1)) %>% 
+  mutate(points= sum(PTS))
+  
+```
+

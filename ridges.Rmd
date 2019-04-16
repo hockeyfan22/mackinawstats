@@ -1,0 +1,44 @@
+---
+title: "ridge plots"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+NHL = read_csv(here("shots20192.csv"))
+Leafs = NHL %>% 
+  filter(teamCode == "TOR")
+```
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Species)) + geom_density_ridges()
+
+Leafs %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(shooterName = fct_reorder(shooterName, xGoal)) %>% 
+  ggplot(aes(xGoal, shooterName)) +
+  geom_density_ridges()
+  
+```
+
+
+
+
+

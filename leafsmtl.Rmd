@@ -1,0 +1,57 @@
+---
+title: "mtl"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+leafs = read_csv(here("leafsmtl.csv"))
+
+```
+
+```{r}
+leafs %>% 
+  select(team,playerName,position, situation, I_F_flurryScoreVenueAdjustedxGoals) %>% 
+  filter(situation == "5on5") %>% 
+  filter(position != "line") %>% 
+  filter(position != "Team Level") %>% 
+  filter(position != "pairing") %>% 
+  mutate(position = if_else(position != "D", "F","D")) %>% 
+  filter(team == "TOR") %>% 
+  arrange(desc(I_F_flurryScoreVenueAdjustedxGoals)) %>% 
+  head(13) %>% 
+  mutate(I_F_flurryScoreVenueAdjustedxGoals = round(I_F_flurryScoreVenueAdjustedxGoals,2)) %>% 
+  ggplot(aes(reorder(playerName,I_F_flurryScoreVenueAdjustedxGoals),I_F_flurryScoreVenueAdjustedxGoals, fill = position)) +
+geom_col() +
+ geom_text(aes(label = I_F_flurryScoreVenueAdjustedxGoals), position = position_stack(vjust = 0.5),
+colour = "white", size = 3, family = "Roboto Condensed",
+show.legend = F) +
+  coord_flip() +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Expected Goals 5v5 Score/Venue/Flurry Adjusted", title = "Expected Goals 5v5 Score/Venue/Flurry Adjusted", subtitle = "2/23 vs. MTL. Data from Moneypuck.com")
+```
+

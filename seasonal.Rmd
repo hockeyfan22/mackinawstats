@@ -1,0 +1,58 @@
+---
+title: "linecharts"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+skaters = read_csv("gamelog2008to2019.csv")
+```
+
+```{r}
+g1 = skaters %>% 
+  mutate(Season = as.character(Season)) %>% 
+  group_by(Season) %>% 
+  mutate(Points = case_when(result == "W" ~ 2,
+                               result == "L" & OT == "OT" ~ 1,
+                               result == "L" ~ 0)) %>% 
+  mutate(Points = cumsum(Points)) %>%
+  group_by(Season) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game,Points, group = Season, color = Season)) +
+  geom_line(size = 1.5) +
+  geom_text(hjust=0, data=.%>% filter(game==82), nudge_x= 0.25, aes(label=Season),size=6) +
+  expand_limits(x=90) +
+  theme_fivethirtyeight() +
+  theme(legend.position="none") +
+  labs(title = "Leafs Points Accumulation by Season", subtitle = "data from hockeyreference.com")
+
+anim<-
+  g1+transition_states(Season)+shadow_mark(alpha=0.25)
+
+animate(anim, end_pause=25,nframes=125,width=1000,height=800)
+
+anim_save(file="seasonal.gif", 
+          animation = last_animation())
+```
+
+

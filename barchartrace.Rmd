@@ -1,0 +1,127 @@
+---
+title: "bar chart race"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+allteams = read_csv("all_teams_4.8.csv")
+allsituations = allteams %>% 
+  filter(situation == "all")
+all201819 = allsituations %>% 
+  filter(season == "2018")
+```
+```{r}
+data = all201819 %>% 
+  group_by(season, team) %>% 
+  mutate(game = row_number()) %>% 
+  select(team, game, season, scoreVenueAdjustedxGoalsFor, highDangerShotsFor) %>% 
+  mutate(cumxG = cumsum(scoreVenueAdjustedxGoalsFor)) %>% 
+  mutate(cumhighdanger = cumsum(highDangerShotsFor))
+  
+```
+
+```{r}
+data %>% 
+  arrange(game, -cumxG) %>% 
+  group_by(game) %>% 
+  mutate(rank = row_number()) %>% 
+  filter(rank<=10) %>% 
+  ggplot(aes(reorder(rank,cumxG), cumxG, group = team, fill = team)) +
+  geom_col(aes(y = cumxG)) +
+  geom_text(aes(label = team), hjust = "right") +
+  theme(legend.position="none") +
+  coord_flip() +
+  transition_time(game) +
+  ease_aes('cubic-in-out') +
+  labs(title= "Expected Goals rankings", subtitle = 'Expected Goals through {frame_time} games') +
+  theme_fivethirtyeight() +
+  guides(fill=FALSE)
+
+anim_save("barchartrace.gif")
+```
+```{r}
+anim = data %>% 
+  arrange(game, -cumxG) %>% 
+  group_by(game) %>% 
+  mutate(rank = row_number()) %>% 
+  filter(rank<=10) %>% 
+  ggplot(aes(reorder(rank,cumxG), cumxG, group = team, fill = team)) +
+  geom_col(aes(y = cumxG)) +
+  geom_text(aes(label = team), hjust = "right") +
+  theme(legend.position="none") +
+  coord_flip() +
+  transition_time(game) +
+  ease_aes('cubic-in-out') +
+  labs(title= "Expected Goals rankings", subtitle = 'Expected Goals through {frame_time} games') +
+  theme_fivethirtyeight() +
+  guides(fill=FALSE)
+
+animate(anim, nframes = 100, end_pause = 15, rewind = FALSE)
+
+anim_save("barchartrace2.gif")
+```
+```{r}
+anim2 = data %>% 
+  arrange(game, -cumxG) %>% 
+  group_by(game) %>% 
+  mutate(rank = row_number()) %>% 
+  filter(rank<=10) %>% 
+  ggplot(aes(reorder(rank,cumxG), cumxG, group = team, fill = team)) +
+  geom_col(aes(y = cumxG)) +
+  geom_text(aes(label = team), hjust = "right") +
+  theme(legend.position="none") +
+  coord_flip() +
+  transition_time(game) +
+  ease_aes('cubic-in-out') +
+  labs(title= "Expected Goals rankings", subtitle = 'Expected Goals through {frame_time} games') +
+  theme_fivethirtyeight() +
+  guides(fill=FALSE)
+
+animate(anim2, nframes = 100, end_pause = 15, rewind = FALSE)
+
+anim_save("barchartrace3.gif")
+```
+```{r}
+#highdanger
+anim3 = data %>% 
+  arrange(game, -cumhighdanger) %>% 
+  group_by(game) %>% 
+  mutate(rank = row_number()) %>% 
+  filter(rank<=10) %>% 
+  ggplot(aes(reorder(rank,cumhighdanger), cumhighdanger, group = team, fill = team)) +
+  geom_col(aes(y = cumhighdanger)) +
+  geom_text(aes(label = team), hjust = "right") +
+  theme(legend.position="none") +
+  coord_flip() +
+  transition_time(game) +
+  ease_aes('cubic-in-out') +
+  labs(title= "Expected Goals rankings", subtitle = 'Expected Goals through {frame_time} games') +
+  theme_fivethirtyeight() +
+  guides(fill=FALSE)
+
+animate(anim3, nframes = 100, end_pause = 15, rewind = FALSE)
+
+anim_save("barchartrace4.gif")
+```
+

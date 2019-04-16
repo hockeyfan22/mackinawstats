@@ -1,0 +1,72 @@
+---
+title: "lines"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+NHL = read_csv(here("lines.csv"))
+Leafs = NHL %>% 
+  filter(team == "TOR")
+```
+
+```{r}
+Plot = Leafs %>% 
+  filter(games_played>10) %>% 
+  mutate(minutes = icetime/60) %>% 
+  mutate(games60 = minutes/60) %>% 
+  mutate(xGoalspermin = round(xGoalsFor/games60,2),
+         xGoalsagainstpermin = round(xGoalsAgainst/games60,2),
+         goalsForpermin = goalsFor/games60,
+         highDangerShotsForpermin = highDangerShotsFor/games60,
+         highDangerxGoalsForpermin = highDangerxGoalsFor/games60) %>% 
+  select(name, games_played,xGoalspermin, xGoalsagainstpermin, goalsForpermin, highDangerShotsForpermin, highDangerxGoalsForpermin,icetime,games60, minutes, games_played, xGoalsPercentage) %>% 
+  arrange(desc(xGoalspermin)) %>% 
+  filter(minutes>100) %>% 
+  mutate(name = fct_reorder(name, xGoalspermin)) %>% 
+  mutate(diff = xGoalspermin - xGoalsagainstpermin)
+
+Plot %>% 
+  ggplot(aes(name,x = xGoalspermin, xend = xGoalsagainstpermin)) +
+    geom_dumbbell(size=3, color="#2149AD", 
+                colour_x = "#2149AD", colour_xend = "#7D9BE5",
+                dot_guide=TRUE, dot_guide_size=0.25) +
+  expand_limits(x=0) +
+  geom_text(aes(xGoalspermin, name, label = xGoalspermin, color="#273B6D", size=2.75, vjust=1.5)) +
+  geom_text(aes(xGoalsagainstpermin, name, label = xGoalsagainstpermin, color="#273B6D", size=2.75, vjust=1.5)) +
+  theme(legend.position="none") +
+  labs(x="", y= "")
+
+gg <- gg + geom_text(data=filter(df, country=="Germany"),
+                     aes(x=ages_35, y=country, label="Ages 35+"),
+                     color="#9fb059", size=3, vjust=-2, fontface="bold", family="Calibri")
+gg <- gg + geom_text(data=filter(df, country=="Germany"),
+                     aes(x=ages_18_to_34, y=country, label="Ages 18-34"),
+                     color="#edae52", size=3, vjust=-2, fontface="bold", family="Calibri")
+  
+
+
+gg <- gg + geom_text(data=df, aes(x=ages_35, y=country, label=percent_first(ages_35)),
+                     color="#9fb059", size=2.75, vjust=2.5, family="Calibri")
+gg <- gg + geom_text(data=df, color="#edae52", size=2.75, vjust=2.5, family="Calibri",
+                     aes(x=ages_18_to_34, y=country, label=percent_first(ages_18_to_34)))
+
+```
+

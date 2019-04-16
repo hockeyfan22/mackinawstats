@@ -1,0 +1,49 @@
+---
+title: "cap"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+skaters = read_csv(here("cap.csv")) %>% 
+  mutate(PLAYER = gsub("[^[:alnum:][:blank:]?&/\\-]", "", PLAYER))
+
+```
+
+```{r}
+player = filter(skaters, PLAYER == "Patrick Marleau") %>% 
+   mutate(caphit = round(`CAP HIT`/1000000,2))
+
+skaters %>% 
+  filter(GP>15) %>% 
+  mutate(caphit = round(`CAP HIT`/1000000,2)) %>% 
+  ggplot(aes(caphit, P)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = player, color = "#003E7E", size = 4, alpha = 1) +
+  theme_fivethirtyeight() +
+  labs(title = "Cap Hit ($M) versus Points, 2018-2019 season", subtitle = "Among forwards with at least 15 GP, data from Cap Friendly", x="Cap Hit ($M)", y= "Points")
+
+```
+

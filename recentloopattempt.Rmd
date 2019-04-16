@@ -1,0 +1,136 @@
+---
+title: "results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+results = read_csv("results3.28.csv")
+```
+
+```{r}
+Leafs = results %>% 
+  filter(Visitor == "Toronto Maple Leafs" | Home == "Toronto Maple Leafs")
+
+Leafs = Leafs %>% 
+  mutate(TORpoints = case_when(Home == "Toronto Maple Leafs" & HG>VG ~ 2,
+                               Visitor == "Toronto Maple Leafs" & VG>HG ~ 2, TRUE ~ 0)) %>% 
+  mutate(TORpoints = case_when(TORpoints == 0 & OT == "OT" ~ 1,
+                               TRUE ~ TORpoints)) %>% 
+  mutate(team = paste("Toronto Maple Leafs")) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, Date, team, TORpoints) %>% 
+  mutate(TORpoints = cumsum(TORpoints))
+```
+
+```{r}
+Boston = results %>% 
+  filter(Visitor == "Boston Bruins" | Home == "Boston Bruins")
+
+Boston = Boston %>% 
+  mutate(BOSpoints = case_when(Home == "Boston Bruins" & HG>VG ~ 2,
+                               Visitor == "Boston Bruins" & VG>HG ~ 2, TRUE ~ 0)) %>% 
+  mutate(BOSpoints = case_when(BOSpoints == 0 & OT == "OT" ~ 1,
+                               TRUE ~ BOSpoints)) %>% 
+  mutate(team = paste("Boston Bruins")) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, Date, team, BOSpoints) %>% 
+  mutate(BOSpoints = cumsum(BOSpoints))
+```
+
+```{r}
+Tampa = results %>% 
+  filter(Visitor == "Tampa Bay Lightning" | Home == "Tampa Bay Lightning")
+
+Tampa = Tampa %>% 
+  mutate(TBLpoints = case_when(Home == "Tampa Bay Lightning" & HG>VG ~ 2,
+                               Visitor == "Tampa Bay Lightning" & VG>HG ~ 2, TRUE ~ 0)) %>% 
+  mutate(TBLpoints = case_when(TBLpoints == 0 & OT == "OT" ~ 1,
+                               TRUE ~ TBLpoints)) %>% 
+  mutate(team = paste("Tampa Bay Lightning")) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, Date, team, TBLpoints) %>% 
+  mutate(TBLpoints = cumsum(TBLpoints))
+```
+
+
+```{r}
+Montreal = results %>% 
+  filter(Visitor == "Montreal Canadiens" | Home == "Montreal Canadiens")
+
+Montreal = Montreal %>% 
+  mutate(MTLpoints = case_when(Home == "Montreal Canadiens" & HG>VG ~ 2,
+                               Visitor == "Montreal Canadiens" & VG>HG ~ 2, TRUE ~ 0)) %>% 
+  mutate(MTLpoints = case_when(MTLpoints == 0 & OT == "OT" ~ 1,
+                               TRUE ~ MTLpoints)) %>% 
+  mutate(team = paste("Montreal Canadiens")) %>% 
+  mutate(game = row_number()) %>% 
+  select(game, Date, team, MTLpoints) %>% 
+  mutate(MTLpoints = cumsum(MTLpoints))
+```
+
+```{r}
+full1 = full_join(Leafs, Boston, by ="game")
+full2 = full_join(full1, Montreal, by = "game")
+full = full_join(full2, Tampa, by = "game")
+```
+
+
+```{r}
+full %>% 
+  gather(TORpoints, BOSpoints,TBLpoints,MTLpoints, key = "teampoints", value = "value") %>% 
+  select(game, teampoints, value) %>% 
+  mutate(team = case_when(teampoints == "TORpoints" ~ "Toronto Maple Leafs",
+                         teampoints == "BOSpoints" ~ "Boston Bruins",
+                         teampoints == "TBLpoints" ~ "Tampa Bay Lightning",
+                         teampoints == "MTLpoints" ~ "Montreal Canadiens", TRUE ~ teampoints)) %>%
+  ggplot(aes(game,value, group = team, color = team)) +
+  geom_line(size = 1.5) +
+  theme_fivethirtyeight() +
+  scale_color_manual(values = c("Toronto Maple Leafs" = "#003E7E", "Tampa Bay Lightning" = "#002868", "Boston Bruins" = "#FFB81C", "Montreal Canadiens" = "#AF1E2D"))
+```
+
+```{r}
+full %>% 
+  gather(TORpoints, BOSpoints,TBLpoints,MTLpoints, key = "teampoints", value = "value") %>% 
+  select(game, teampoints, value) %>% 
+  mutate(team = case_when(teampoints == "TORpoints" ~ "Toronto Maple Leafs",
+                         teampoints == "BOSpoints" ~ "Boston Bruins",
+                         teampoints == "TBLpoints" ~ "Tampa Bay Lightning",
+                         teampoints == "MTLpoints" ~ "Montreal Canadiens", TRUE ~ teampoints)) %>%
+   mutate(image = case_when(teampoints == "TORpoints" ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/toronto.png",
+                         teampoints == "BOSpoints" ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/boston.png",
+                         teampoints == "TBLpoints" ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/tampa.png",
+                         teampoints == "MTLpoints" ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/canadiens.png", TRUE ~ teampoints)) %>%  
+  ggplot(aes(game,value, group = team, color = team)) +
+  geom_line(size = 1.5) +
+  theme_fivethirtyeight() +
+  scale_color_manual(values = c("Toronto Maple Leafs" = "#003E7E", "Tampa Bay Lightning" = "#002868", "Boston Bruins" = "#FFB81C", "Montreal Canadiens" = "#AF1E2D")) +
+  geom_image(aes(image=image), size=0.08) +
+    transition_reveal(game) +
+  theme(legend.position="none") +
+  labs(title = "Atlantic Division Playoff Hunt", subtitle = "data from hockeyreference.com")
+
+anim_save("atlantic.gif")
+```
+

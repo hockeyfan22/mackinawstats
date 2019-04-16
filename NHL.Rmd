@@ -1,0 +1,74 @@
+---
+title: "NHL"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+theme_set(theme_light())
+
+NHL = read_csv(here("NHL.csv"), na = c("--","NA"))
+```
+#Analyzing leafs data by year
+```{r}
+Leafs = NHL %>% 
+  filter(Team == "TOR")
+
+Leafs %>% 
+  arrange(desc(P)) %>%
+  head(15) %>% 
+  select(Player,Season,P) %>% 
+  mutate(Playerseason = paste(Player,Season)) %>% 
+  mutate(Playerseason = fct_reorder(Playerseason,P)) %>% 
+  ggplot(aes(Playerseason,P, fill = Season))+
+  geom_col()+
+  coord_flip()
+  
+
+
+  
+```
+
+#Trying to calculate by year statistics
+```{r}
+Leafs %>%
+  group_by(Season) %>% 
+  filter(!is.na(G)) %>% 
+  mutate(Gtotal = sum(G),
+         Gpercent = G/Gtotal) %>% 
+  arrange(desc(Gpercent)) %>%
+  mutate(Playerseason = paste(Player,Season)) %>% 
+  head(20) %>% 
+  select(Playerseason, Gpercent,G,A,P,`CF%`,`xG+/-`) %>% 
+  ggplot(aes(reorder(Playerseason,Gpercent),Gpercent,fill = Playerseason))+
+  geom_col()+
+  coord_flip()
+
+Leafs %>%
+  group_by(Season) %>% 
+  filter(!is.na(G)) %>% 
+  mutate(Gtotal = sum(G),
+         Gpercent = G/Gtotal) %>% 
+  arrange(desc(Gpercent)) %>%
+  mutate(Playerseason = paste(Player,Season)) %>%
+  filter(Player == "Phil Kessel") %>% 
+  arrange(Season) %>% 
+  ggplot(aes(Season,Gpercent))+
+  geom_point()+
+  geom_line()
+  
+         
+
+```
+
+```{r}
+Leafs
+
+```
+
+

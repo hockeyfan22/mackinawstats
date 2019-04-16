@@ -1,0 +1,84 @@
+---
+title: "Leafs dumbell plots"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(ggalt)
+
+NHL = read_csv(here("NHL.csv"), na = c("--","NA"))
+
+NHL[is.na(NHL)] <- 0
+
+theme_set(theme_light())
+```
+#Pietrangelo production in comparison to leafs - 2018 and last 3 years
+```{r}
+NHL %>% 
+  filter(Team == "TOR"  | Player == "Alex Pietrangelo") %>% 
+  filter(Season == 2018) %>% 
+  filter(Position == "D") %>%
+  mutate(Player = fct_reorder(Player,P)) %>% 
+  ggplot(aes(Player,P, fill = Team))+
+  geom_col()+
+  coord_flip()
+
+Cleaned = NHL %>% 
+  filter(Team == "TOR"  | Player == "Alex Pietrangelo") %>% 
+  filter(Season == 2017 |Season == 2018 | Season == 2019) %>% 
+  filter(Position == "D") %>%
+  select(Player, Team, Season, P) %>% 
+  spread(key = Season, value = P) 
+
+Cleaned[is.na(Cleaned)] <- 0
+
+Cleaned %>% 
+  mutate(Sum = `2017`+ `2018`+`2019`) %>% 
+  mutate(Player = fct_reorder(Player,Sum)) %>% 
+  ggplot(aes(Player,Sum, fill = Team))+
+  geom_col()+
+  coord_flip()
+  
+```
+#other metrics
+```{r}
+NHL %>% 
+  filter(Team == "TOR"  | Player == "Alex Pietrangelo") %>% 
+  filter(Season == 2018) %>% 
+  filter(Position == "D") %>% 
+  View()
+  
+```
+
+
+
+
+
+
+#additive chart
+```{r}
+NHL %>% 
+  filter(Team == "TOR"  | Player == "Alex Pietrangelo") %>% 
+  filter(Season == 2017 |Season == 2018 | Season == 2019) %>% 
+  filter(Position == "D") %>%
+  group_by(Player, Season) %>% 
+  mutate
+  ggplot(aes(reorder(Player,P),P,fill = Season))+
+  geom_col()+
+  coord_flip()
+```
+

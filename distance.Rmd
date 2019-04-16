@@ -1,0 +1,135 @@
+---
+title: "distance"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(beeswarm)
+
+nhl = read_csv(here("shots_2018_3.4.csv"))
+```
+
+```{r}
+atlantic = nhl %>% 
+  filter(teamCode == "TOR" | teamCode == "T.B" | teamCode == "MTL" | teamCode == "BOS" | teamCode == "BUF" | teamCode == "FLA" | teamCode == "OTT" | teamCode == "DET" )
+
+```
+
+```{r}
+atlantic %>% 
+  group_by(teamCode) %>% 
+  summarize(distance = mean(arenaAdjustedShotDistance)) %>% 
+  mutate(team = fct_reorder(teamCode,distance, .desc = TRUE)) %>% 
+  mutate(distance = round(distance,2)) %>% 
+  ggplot(aes(team,distance, fill = team)) +
+  geom_col() +
+  coord_flip() + 
+  geom_text(aes(label = distance), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5, family = "Roboto Condensed",
+show.legend = F) +
+  theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  theme(legend.position="none") +
+  labs(x="", y ="Average Shot Distance (Feet)", title = "Average Shot Distance By Atlantic Teams", subtitle = "2018-2019 Season, Data from Moneypuck.com, venue adjusted")
+```
+
+```{r}
+atlantic %>% 
+  group_by(teamCode, game_id) %>% 
+  summarize(distance = mean(arenaAdjustedShotDistance)) %>% 
+  mutate(game = ave(teamCode == teamCode, teamCode, FUN=cumsum)) %>% 
+  select(teamCode, game, distance) %>% 
+  ggplot(aes(game, distance, color = "#FA6866")) + 
+  geom_line() +
+  facet_wrap(~teamCode) +
+   theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(x = "", y="Points Percentage")+
+  theme(legend.position="none")
+
+
+```
+
+```{r}
+atlantic %>% 
+  filter(teamCode == "TOR") %>% 
+  group_by(game_id) %>% 
+  summarize(distance = mean(arenaAdjustedShotDistance)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, distance, color = "#FA6866")) + 
+  geom_line() +
+   theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(x = "", y="Points Percentage")+
+  theme(legend.position="none")
+```
+
+```{r}
+atlantic %>% 
+  group_by(teamCode, game_id) %>% 
+  summarize(distance = mean(xG)) %>% 
+  mutate(game = ave(teamCode == teamCode, teamCode, FUN=cumsum)) %>% 
+  select(teamCode, game, distance) %>% 
+  ggplot(aes(game, distance, color = "#FA6866")) + 
+  geom_line() +
+  facet_wrap(~teamCode) +
+   theme_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.title = element_blank(),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+guides(fill = guide_legend(reverse = T))+
+  labs(x = "", y="Points Percentage")+
+  theme(legend.position="none")
+```
+
+```{r}
+atlantic %>% 
+  filter(playerPositionThatDidEvent == "D") %>% 
+  group_by(teamCode, game_id) %>% 
+  summarize(count = n()) %>% 
+  mutate(game = ave(teamCode == teamCode, teamCode, FUN=cumsum)) %>% 
+  mutate(maxgame = max(game)) %>% 
+  count(playerPositionThatDidEvent)
+
+atlantic %>% 
+  group_by(teamCode, game_id) %>% 
+  summarize(distance = mean(xG)) %>% 
+  
+```
+

@@ -1,0 +1,143 @@
+---
+title: "barrel"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+skaters = read_csv("barrel.csv")
+```
+```{r}
+
+skaters %>% 
+  mutate(Year = as.character(Year)) %>% 
+  group_by(Year) %>% 
+  mutate(Points = case_when(Result == "W" ~ 2,
+                               Result == "L" & OT == "OT" ~ 1,
+                               Result == "L" ~ 0)) %>% 
+  select(GP, Year, Date, Opponent, GF,GA, Result, OT, Points) %>%
+  mutate(Points = cumsum(Points)) %>%
+  group_by(Year) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, Points, group = Year, color = Year)) +
+  geom_line(size = 1.5) +
+  theme_fivethirtyeight() +
+  theme(legend.position="none") +
+  labs(title = "Toronto Maple Leafs Points", subtitle = "2017-18 and 2018-19 Seasons, data from Hockeyreference.com", y = "Points") +
+  transition_reveal(game) +
+   geom_segment(aes(xend = 82.1, yend = `Points`), linetype = 2, colour = 'grey') +
+   geom_text(aes(x = 82.1, label = Points), hjust = 0, size = 5) +
+  expand_limits(x = 84)
+
+anim_save("1819.gif")
+```
+```{r}
+skaters %>% 
+  mutate(Year = as.character(Year)) %>%
+  filter(Year == "2019") %>% 
+  mutate(PDO5 = rollmean(PDO,5, na.pad = "TRUE", align = "right")) %>% 
+  ggplot(aes(GP,PDO5)) +
+  geom_line(size = 1.5, color = "#003E7E") +
+  geom_hline(yintercept=100, color = "#003E7E") +
+  theme_fivethirtyeight() +
+  labs(title = "Leafs 5 game rolling PDO", subtitle = "data from hockeyreference.com") +
+  transition_reveal(GP)
+
+anim_save("PDO.gif")
+  
+```
+```{r}
+skaters %>% 
+  mutate(Year = as.character(Year)) %>%
+  filter(Year == "2019") %>% 
+  group_by(Year) %>% 
+  mutate(Points = case_when(Result == "W" ~ 2,
+                               Result == "L" & OT == "OT" ~ 1,
+                               Result == "L" ~ 0)) %>% 
+  select(GP, Year, Points) %>% 
+  mutate(gamesbin = cut(GP, c(0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,Inf), labels=c("0-5","6-10","11-15","16-20","21-25","26-30","31-35","36-40","41-45","46-50","51-55", "56-60","61-65","66-70","70-73"))) %>% 
+  group_by(gamesbin) %>% 
+  summarize(Pointstotal = sum(Points)) %>% 
+  mutate(gamesbin = fct_rev(gamesbin)) %>% 
+  ggplot(aes(gamesbin,Pointstotal, fill = gamesbin)) +
+  geom_col() +
+  coord_flip() +
+  theme_fivethirtyeight() +
+  theme(legend.position="none") +
+  labs(title = "Leafs Point totals in 5 game chunks", subtitle = "Through 73 games, data from hockeyreference.com") +
+  geom_text(aes(label = `Pointstotal`), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5,show.legend = F) 
+```
+
+```{r}
+skaters %>% 
+  mutate(Year = as.character(Year)) %>%
+  filter(Year == "2019") %>% 
+  group_by(Year) %>% 
+  mutate(Points = case_when(Result == "W" ~ 2,
+                               Result == "L" & OT == "OT" ~ 1,
+                               Result == "L" ~ 0)) %>% 
+  select(GP, Year, Points) %>% 
+  mutate(gamesbin = cut(GP, c(0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,Inf), labels=c("0-5","6-10","11-15","16-20","21-25","26-30","31-35","36-40","41-45","46-50","51-55", "56-60","61-65","66-70","70-73"))) %>% 
+  group_by(gamesbin) %>% 
+  summarize(Pointstotal = sum(Points)) %>% 
+  mutate(gamesbin = fct_rev(gamesbin)) %>% 
+  ggplot(aes(gamesbin,Pointstotal, fill = gamesbin)) +
+  geom_col() +
+  coord_flip() +
+  theme_hc() +
+  theme(legend.position="none") +
+  labs(title = "Leafs Point totals in 5 game chunks", x= "5 game segment", y= "Points") +
+  geom_text(aes(label = `Pointstotal`), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5,show.legend = F) 
+```
+
+```{r}
+#animate
+skaters %>% 
+  mutate(Year = as.character(Year)) %>%
+  filter(Year == "2019") %>% 
+  group_by(Year) %>% 
+  mutate(Points = case_when(Result == "W" ~ 2,
+                               Result == "L" & OT == "OT" ~ 1,
+                               Result == "L" ~ 0)) %>% 
+  select(GP, Year, Points) %>% 
+  mutate(gamesbin = cut(GP, c(0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,Inf), labels=c(1:15))) %>% 
+  group_by(gamesbin) %>% 
+  summarize(Pointstotal = sum(Points)) %>% 
+  mutate(gamesbin = fct_rev(gamesbin)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game,Pointstotal, fill = game)) +
+  geom_col() +
+  coord_flip() +
+  theme_hc() +
+  theme(legend.position="none") +
+  labs(title = "Leafs Point totals in 5 game chunks", x= "5 game segment", y= "Points") +
+  geom_text(aes(label = `Pointstotal`), position = position_stack(vjust = 0.5),
+colour = "white", size = 3.5,show.legend = F) +
+  transition_states(game, wrap = FALSE) +
+  shadow_mark()
+```
+

@@ -1,0 +1,89 @@
+---
+title: "leafslines"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+
+leafs = read_csv(here("leafslines.csv"))
+```
+
+```{r}
+plot = leafs %>% 
+  mutate(minutes = icetime/60) %>% 
+  mutate(games60 = minutes/60) %>%
+  select(name,position,contract, icetime, minutes, games60, xGoalsPercentage, corsiPercentage, xOnGoalFor, xOnGoalAgainst, flurryScoreVenueAdjustedxGoalsFor, flurryScoreVenueAdjustedxGoalsAgainst) %>% 
+  mutate(xOnGoalFor = xOnGoalFor/games60,
+         xOnGoalAgainst = xOnGoalAgainst/games60,
+         flurryScoreVenueAdjustedxGoalsFor = flurryScoreVenueAdjustedxGoalsFor/games60,
+         flurryScoreVenueAdjustedxGoalsAgainst = flurryScoreVenueAdjustedxGoalsAgainst/games60) %>% 
+  mutate(diff = flurryScoreVenueAdjustedxGoalsFor - flurryScoreVenueAdjustedxGoalsAgainst,
+         diffonice = xOnGoalFor - xOnGoalAgainst)
+  
+```
+
+```{r}
+plotA = plot %>%
+  ggplot(aes(contract, corsiPercentage)) +
+  geom_point() +
+   geom_text_repel(aes(contract, corsiPercentage, label = name), size = 3) +
+  theme_economist() + scale_fill_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+axis.title = element_text(size = 12),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.text = element_text(size = 10),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) + 
+  labs(y="Corsi Percentage", x = "Cap Hit") +
+  scale_x_continuous(labels = dollar)
+
+plotB = plot %>%
+  ggplot(aes(contract, flurryScoreVenueAdjustedxGoalsFor)) +
+  geom_point() +
+   geom_text_repel(aes(contract, flurryScoreVenueAdjustedxGoalsFor, label = name), size = 3) +
+  theme_economist() + scale_fill_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+axis.title = element_text(size = 12),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.text = element_text(size = 10),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+  labs(y="Expected Goals For", x = "Cap Hit") +
+  scale_x_continuous(labels = dollar)
+
+plotC = plot %>%
+  ggplot(aes(contract, diff)) +
+  geom_point() +
+   geom_text_repel(aes(contract, diff, label = name), size = 3) +
+  theme_economist() + scale_fill_economist() +
+theme(axis.line.x = element_line(size = .5, colour = "black"),
+axis.title = element_text(size = 12),
+legend.position = "bottom", legend.direction = "horizontal",
+legend.text = element_text(size = 10),
+plot.title = element_text(family = "Roboto Condensed"),
+text = element_text(family = "Roboto Condensed")) +
+  labs(y="Expected Goals Difference (xGF - xGA)", x = "Cap Hit") +
+  scale_x_continuous(labels = dollar)
+
+plot_grid(plotA, plotC, labels = c("A", "B"))
+
+
+```
+

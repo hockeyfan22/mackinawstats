@@ -19,6 +19,7 @@ library(hrbrthemes)
 library(xkcd)
 library(cowplot)
 library(magick)
+library(zoo)
 
 Leafs = read_csv("https://raw.githubusercontent.com/hockeyfan22/mackinawstats/master/TOR.csv")
 ```
@@ -29,7 +30,9 @@ Leafs20185on5 = Leafs %>%
 
 Leafs20185on5 %>% 
   mutate(rollingxG = rollmean(xGoalsPercentage,5, na.pad = "TRUE", align = "right")) %>% 
+  mutate(rollingCF = rollmean(corsiPercentage,5,na.pad = "TRUE",align = "right")) %>% 
   mutate(game = row_number()) %>% 
+  select(game, rollingCF, rollingxG) %>% 
   ggplot(aes(game,rollingxG, color = "#FA6866")) +
   geom_line(size = 3) +
   theme_economist() +
@@ -39,7 +42,8 @@ legend.title = element_blank(),
 plot.title = element_text(family = "Roboto Condensed"),
 text = element_text(family = "Roboto Condensed")) +
 guides(fill = guide_legend(reverse = T))+
-  labs(title = "Expected Goals Percentage at 5v5", subtitle="Data from Moneypuck.com",x = "Game Number", y="Expected Goals Percentage") +
+  scale_y_continuous(labels = percent) +
+  labs(title = "Expected Goals Percentage at 5v5", subtitle="Data from Moneypuck.com",x = "Game Number", y="Expected Goals/Corsi Percentage") +
   theme(legend.position="none")
 ```
 

@@ -1,0 +1,103 @@
+---
+title: "goals"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+skaters = read_csv(here("skaters.csv"))
+rates = read_csv(here("skaterrates.csv"))
+```
+
+```{r}
+skaters %>% 
+    mutate(G = case_when(season == 20122013 ~ G*1.71,
+                         season == 20182019 ~ G*1.14,
+                         TRUE ~ G)) %>% 
+  group_by(Team, season) %>% 
+  summarize(goal20score = sum(G>20)) %>% 
+  filter(Team == "TOR" | Team == "T.B" | Team == "BOS" |Team == "MTL" |Team == "BUF" |Team == "FLA" |Team == "DET" |Team == "OTT") %>% 
+  ggplot(aes(season, goal20score, group = Team, color = Team)) +
+  geom_line(size = 1.5) +
+  facet_wrap(~Team) +
+  scale_x_continuous(breaks = c(20072008,20092010,20112012,20132014,20152016,20172018), labels = c("2008","2010","2012","2014","2016","2018")) +
+  theme_fivethirtyeight() +
+   theme(legend.position="none") +
+  labs(title = "Number of 20 goal scorers in the Atlantic Division", subtitle = "Data from @EvolvingHockey")
+```
+
+```{r}
+skaters %>% 
+    mutate(G = case_when(season == 20122013 ~ G*1.71,
+                         season == 20182019 ~ G*1.14,
+                         TRUE ~ G)) %>% 
+  group_by(season) %>% 
+  mutate(meangoals = mean(G)) %>% 
+  group_by(season,Team) %>% 
+  summarize(aboveaverage = sum(G>meangoals)) %>% 
+  filter(Team == "TOR" | Team == "T.B" | Team == "BOS" |Team == "MTL" |Team == "BUF" |Team == "FLA" |Team == "DET" |Team == "OTT") %>% 
+   ggplot(aes(season, aboveaverage, group = Team, color = Team)) +
+  geom_line(size = 1.5) +
+  facet_wrap(~Team) +
+  facet_wrap(~Team) +
+  scale_x_continuous(breaks = c(20072008,20092010,20112012,20132014,20152016,20172018), labels = c("2008","2010","2012","2014","2016","2018")) +
+  theme_fivethirtyeight() +
+   theme(legend.position="none") +
+  labs(title = "Number of players scoring above the league average in the Atlantic Division", subtitle = "Data from @EvolvingHockey")
+```
+```{r}
+rates %>%
+  filter(TOI>150) %>% 
+  filter(position == "F") %>% 
+  group_by(season) %>% 
+  mutate(meanpoints = mean(Points_60)) %>% 
+  group_by(season,Team) %>% 
+  summarize(aboveaverage = sum(Points_60>meanpoints)) %>% 
+  filter(Team == "TOR" | Team == "T.B" | Team == "BOS" |Team == "MTL" |Team == "BUF" |Team == "FLA" |Team == "DET" |Team == "OTT") %>% 
+   ggplot(aes(season, aboveaverage, group = Team, color = Team)) +
+  geom_line(size = 1.5) +
+  facet_wrap(~Team) +
+  facet_wrap(~Team) +
+  scale_x_continuous(breaks = c(20072008,20092010,20112012,20132014,20152016,20172018), labels = c("2008","2010","2012","2014","2016","2018")) +
+  theme_fivethirtyeight() +
+   theme(legend.position="none") +
+  labs(title = "Forwards above league average in P/60", subtitle = "All situations, at least 150 minutes of ice time, Data from @EvolvingHockey") +
+  expand_limits(y=0) +
+  transition_reveal(season)
+
+anim_save("rates.gif")
+```
+```{r}
+rates %>%
+  filter(TOI>150) %>% 
+  filter(position == "F") %>% 
+  group_by(season) %>% 
+  mutate(meanpoints = mean(Points_60)) %>% 
+  group_by(season,Team) %>% 
+  summarize(aboveaverage = sum(Points_60>meanpoints)) %>% 
+  filter(Team == "TOR" | Team == "T.B" | Team == "BOS" |Team == "MTL" |Team == "BUF" |Team == "FLA" |Team == "DET" |Team == "OTT") %>% 
+  filter(season == "20182019")
+```
+

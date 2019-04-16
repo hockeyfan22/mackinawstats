@@ -1,0 +1,77 @@
+---
+title: "johnsson + kapanen"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+shots = read_csv("shots_2018.csv")
+```
+
+```{r}
+leafsgames = shots %>% 
+  filter(homeTeamCode == "TOR" | awayTeamCode == "TOR") %>% 
+  count(game_id) %>% 
+  select(game_id)
+
+Johnsson = shots %>% 
+  filter(shooterName == "Andreas Johnsson") %>% 
+  select(game_id, xGoal, shooterName) %>% 
+  group_by(game_id) %>% 
+  summarize(xGoal = sum(xGoal))
+
+Kapanen = shots %>% 
+  filter(shooterName == "Kasperi Kapanen") %>% 
+  select(game_id, xGoal, shooterName) %>% 
+  group_by(game_id) %>% 
+  summarize(xGoal = sum(xGoal))
+
+kapanenbygame = left_join(leafsgames, Kapanen, by = "game_id")
+```
+
+```{r}
+johnssonbygame %>% 
+  mutate(xGoal = if_else(is.na(xGoal),0,xGoal)) %>% 
+  mutate(xGoal = rollmean(xGoal,10, na.pad = TRUE, align = "right")) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game,xGoal)) + 
+  geom_line(size = 2.5, color = "#003E7E") +
+  theme_fivethirtyeight() +
+  labs(title = "Andreas Johnsson, 10 Game Rolling Average of Expected Goals", subtitle = "Data from Moneypuck.com")
+
+ggsave("johnssonavg.png")
+```
+
+```{r}
+kapanenbygame %>% 
+  mutate(xGoal = if_else(is.na(xGoal),0,xGoal)) %>% 
+  mutate(xGoal = rollmean(xGoal,10, na.pad = TRUE, align = "right")) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game,xGoal)) + 
+  geom_line(size = 2.5, color = "#003E7E") +
+  theme_fivethirtyeight() +
+  labs(title = "Kasperi Kapanen, 10 Game Rolling Average of Expected Goals", subtitle = "Data from Moneypuck.com")
+
+ggsave("kapenenavg.png")
+```
+

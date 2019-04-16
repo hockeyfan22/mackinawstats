@@ -1,0 +1,88 @@
+---
+title: "Kadri blog post"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+standard = read_csv("Evolving_Hockey_skater_stats_Standard_All_no_adj_2019-04-07.csv") %>%
+  mutate(season = case_when(season == 20072008 ~ 2008,
+                            season == 20082009 ~ 2009,
+                            season == 20092010 ~ 2010,
+                            season == 20102011 ~ 2011,
+                            season == 20112012 ~ 2012,
+                            season == 20122013 ~ 2013,
+                            season == 20132014 ~ 2014,
+                            season == 20142015 ~ 2015,
+                            season == 20152016 ~ 2016,
+                            season == 20162017 ~ 2017,
+                            season == 20172018 ~ 2018,
+                            season == 20182019 ~ 2019)) %>% 
+  mutate(season = as.character(season)) %>% 
+  filter(GP>30)
+```
+
+```{r}
+team = standard %>% 
+  filter(player == "NAZEM.KADRI")
+
+standard %>%
+  filter(GP>30) %>% 
+  mutate(season = as.character(season)) %>% 
+  ggplot(aes(season,G_60)) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  geom_point(data = team, color = "#003E7E", size = 3, alpha = 1) +
+  geom_line(data = team, alpha = 0.5, linetype = 'dashed', group = 1) +
+  theme_economist() +
+  labs(x = "Season", y="Goals Per 60", title = "Goals Per 60", subtitle = "Among >30 GP, Data from EvolvingHockey.com")
+
+ggsave("kadrig60.png")
+```
+```{r}
+standard %>%
+  filter(GP>30) %>% 
+  mutate(season = as.character(season)) %>% 
+  ggplot(aes(season,ixG_60)) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  geom_point(data = team, color = "#003E7E", size = 3, alpha = 1) +
+  geom_line(data = team, alpha = 0.5, linetype = 'dashed', group = 1) +
+  theme_economist() +
+  labs(x = "Season", y="Expected Goals per 60", title = "Expected Goals Per 60", subtitle = "Among >30 GP, Data from EvolvingHockey.com")
+
+ggsave("kadrixg60.png")
+```
+```{r}
+standard %>%
+  filter(GP>30) %>% 
+  mutate(season = as.character(season)) %>% 
+  ggplot(aes(season,Sh_perc)) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  geom_point(data = team, color = "#003E7E", size = 3, alpha = 1) +
+  geom_line(data = team, alpha = 0.5, linetype = 'dashed', group = 1) +
+  theme_economist() +
+  labs(x = "Season", y="Shooting Percentage", title = "Shooting Percentage", subtitle = "Among >30 GP, Data from EvolvingHockey.com")
+
+ggsave("kadrish.png")
+```
+
+

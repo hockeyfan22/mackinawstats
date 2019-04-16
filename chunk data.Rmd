@@ -1,0 +1,37 @@
+---
+title: "chunk data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+leafs = read_csv(here("leafs chunks.csv"))
+```
+```{r}
+leafs %>% 
+  group_by(Chunk) %>% 
+  summarize(CFpercent = mean(`CF%`),
+            CA = mean(CA),
+            CF = mean(CF),
+            GF = sum(GF),
+            GA = sum(GA),
+            oisp = mean(`On-Ice SH%`),
+            PDO = mean(PDO),
+            GP = mean(GP))
+```
+```{r}
+leafs %>% 
+  filter(Player == "Travis Dermott")
+```
+

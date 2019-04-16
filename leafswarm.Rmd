@@ -27,9 +27,9 @@ library(ggimage)
 library(beeswarm)
 library(ggbeeswarm)
 
-shots = read_csv(here("all_teams.csv"))
+shots = read_csv("all_teams.csv")
   
-five = shots %>% 
+fivexg = shots %>% 
   filter(situation == "5on5") %>% 
   group_by(season, team) %>% 
   summarize(avgxG = mean(xGoalsPercentage)) %>%
@@ -38,9 +38,9 @@ five = shots %>%
 
 ```{r}
 
-team = filter(five, team == "TOR")
+team = filter(fivexg, team == "TOR")
 
-five %>%
+fivexg %>%
   ggplot(aes(season,avgxG)) +
   geom_quasirandom(dodge.width = 1, alpha = 0.1) +
   geom_point(data = team, color = "#003E7E", size = 2, alpha = 1) +
@@ -48,5 +48,24 @@ five %>%
   scale_x_continuous(breaks=c(2008:2018)) +
   theme_fivethirtyeight() +
   labs(x = "Season", y="Expected Goals Percentage", title = "Expected Goals Percentage since 2008", subtitle = "Data from Moneypuck.com")
+```
+
+```{r}
+fivecf = shots %>% 
+  filter(situation == "5on5") %>% 
+  group_by(season, team) %>% 
+  summarize(avgcf = mean(corsiPercentage)) %>%
+  mutate(avgcf = round(avgcf*100,2))
+
+team = filter(fivecf, team == "TOR")
+
+fivecf %>%
+  ggplot(aes(season,avgcf)) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  geom_point(data = team, color = "#003E7E", size = 2, alpha = 1) +
+  geom_line(data = team, alpha = 0.5, linetype = 'dashed') +
+  scale_x_continuous(breaks=c(2008:2018)) +
+  theme_fivethirtyeight() +
+  labs(x = "Season", y="Corsi Percentage", title = "Corsi Percentage since 2008", subtitle = "Data from Moneypuck.com")
 ```
 

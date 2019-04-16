@@ -1,0 +1,60 @@
+---
+title: "andersen"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+library(plotly)
+
+andersen = read_csv(here("andersen.csv"))
+```
+
+```{r}
+andersen %>% 
+  mutate(Season = as.factor(Season)) %>% 
+  ggplot(aes(G, `SV%`, group = Season, color = Season)) + 
+  geom_line(size = 1.5) +
+  expand_limits(x=70) +
+  theme_fivethirtyeight() +
+  transition_reveal(G) +
+  geom_segment(aes(xend = 66.1, yend = `SV%`), linetype = 2, colour = 'grey') +
+   geom_text(aes(x = 66.1, label = Season), hjust = 0, size = 5) +
+  labs(title = "Frederick Anderson SV% by game", subtitle = "2018 and 2019 Seasons") +
+  theme(legend.position="none")
+
+anim_save("andersen.gif")
+
+```
+
+```{r}
+#static
+andersen %>% 
+  mutate(Season = as.factor(Season)) %>% 
+  ggplot(aes(G, `SV%`, group = Season, color = Season)) + 
+  geom_line(size = 1.5) +
+  expand_limits(x=70) +
+  theme_fivethirtyeight() +
+  labs(title = "Frederick Anderson SV% by game", subtitle = "2018 and 2019 Seasons") +
+  theme(legend.position="none")
+```
+

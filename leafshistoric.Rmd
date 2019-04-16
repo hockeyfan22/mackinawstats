@@ -1,0 +1,54 @@
+---
+title: "leafsskaters"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+leafs = read_csv("leafsskaters.csv")
+```
+```{r}
+leafs %>% 
+  filter(GP>50) %>% 
+  mutate(ptspergame = PTS/GP) %>% 
+  arrange(desc(ptspergame)) %>% 
+  mutate(Player = gsub("\\\\.*","",Player)) %>% 
+  mutate(Player = paste(Player, From, "to", To)) %>% 
+  select(Player, ptspergame, From) %>% 
+  mutate(ptspergame = round(ptspergame,2)) %>% 
+  mutate(Player = fct_reorder(Player, ptspergame)) %>% 
+  head(15) %>% 
+  ggplot(aes(Player, ptspergame, fill = Player)) +
+  geom_col() +
+  coord_flip() +
+  theme_economist() +
+  theme(legend.position="none") +
+  labs(x = "", y="Points Per Game", title = "John Tavares among Leafs legends in Points Per Game", subtitle = "At least 50 games played as a Toronto Maple Leaf") +
+  geom_text(aes(label = ptspergame), position = position_stack(vjust = 0.5),
+colour = "white", size = 4, family = "Roboto Condensed",
+show.legend = F)
+
+```
+

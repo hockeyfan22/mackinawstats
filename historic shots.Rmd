@@ -25,6 +25,17 @@ library(magick)
 NHL = read_csv(here("shots20192.csv"))
 NHL2 = read_csv(here("shots_2007-2017.csv"))
 Shots = rbind(NHL2,NHL)
+skaters2008 = read_csv(here("skaters2008.csv"))
+skaters2009 = read_csv(here("skaters2009.csv"))
+skaters2010 = read_csv(here("skaters2010.csv"))
+skaters2011 = read_csv(here("skaters2011.csv"))
+skaters2012 = read_csv(here("skaters2012.csv"))
+skaters2013 = read_csv(here("skaters2013.csv"))
+skaters2014 = read_csv(here("skaters2014.csv"))
+skaters2015 = read_csv(here("skaters2015.csv"))
+skaters2016 = read_csv(here("skaters2016.csv"))
+skaters2017 = read_csv(here("skaters2017.csv"))
+skaters2018 = read_csv(here("skaters2018.csv"))
 ```
 
 ```{r}
@@ -86,5 +97,11 @@ guides(fill = guide_legend(reverse = T))+
   scale_x_continuous(breaks=c(2007,2010, 2012, 2015, 2018)) +
   theme(legend.position="none")
   
+```
+
+```{r}
+skaters2008 %>%
+  summarize(seconds = sum(icetime)) %>% 
+  mutate(minutes = seconds/60)
 ```
 
