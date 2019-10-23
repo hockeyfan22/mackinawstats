@@ -1,0 +1,82 @@
+---
+title: "historic"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+library(lubridate)
+library(RColorBrewer)
+
+historic = read_csv("historic.csv")
+```
+```{r}
+theme_strip <- theme_minimal()+
+                 theme(axis.text.y = element_blank(),
+                       axis.line.y = element_blank(),
+                       axis.title = element_blank(),
+                       panel.grid.major=element_blank(),
+                       legend.title = element_blank(),
+                       axis.text.x=element_text(vjust=3),
+                       panel.grid.minor=element_blank(),
+                        plot.title=element_text(size=14,face="bold")
+                       )
+
+
+col_strip <- brewer.pal(11,"RdBu")
+
+brewer.pal.info
+```
+```{r}
+historic$Season = gsub('.{3}$', '', historic$Season)
+
+historic = historic %>% 
+  mutate(Season = as.numeric(Season))
+
+historic %>% 
+  ggplot(aes(x = Season, y = 1, fill = `G`)) +
+  geom_tile() +
+  scale_x_continuous(breaks = seq(1917,2018,10)) +
+  scale_y_continuous(expand=c(0,0))+
+           scale_fill_gradientn(colors=rev(col_strip))+
+             guides(fill=guide_colorbar(barwidth = 1)) +
+  theme_strip +
+  labs(title = "Goals per game 1917-2018", caption = "Data: hockeyreference.com")
+
+ggsave("goalspergame.png")
+
+
+
+ggplot(temp_lisboa_yr,
+             aes(x=date,y=1,fill=ta))+
+        geom_tile()+
+           scale_x_date(date_breaks = "6 years",
+                     date_labels = "%Y",
+                     expand=c(0,0))+
+           scale_y_continuous(expand=c(0,0))+
+           scale_fill_gradientn(colors=rev(col_strip))+
+             guides(fill=guide_colorbar(barwidth = 1))+
+            labs(title="LISBOA 1880-2018",
+                caption="Datos: GISS Surface Temperature Analysis")+
+              theme_strip
+```
+

@@ -1,0 +1,226 @@
+---
+title: "babcock"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(lubridate)
+library(zoo)
+```
+
+```{r}
+babcock = read_csv("babcock.csv", col_names = FALSE) %>% 
+  select("text" = X1, "Date" = X2, "Game" = X3) %>% 
+  mutate(Date = mdy(Date))
+
+results = read_csv("leafsresults.csv") %>% 
+  mutate(Date = mdy(Date)) %>% 
+  rename("Game" = GP)
+  
+```
+
+
+```{r}
+gamesum = babcock %>% 
+  unnest_tokens(word, text) %>% 
+  full_join(get_sentiments("bing")) %>% 
+  filter(!is.na(Game)) %>% 
+  mutate(sentiment = case_when(is.na(sentiment) ~ "neutral", TRUE ~ sentiment)) %>% 
+  mutate(value = case_when(sentiment == "positive" ~ 1,
+                           sentiment == "negative" ~ -1,
+                           sentiment == "neutral" ~ 0)) %>% 
+  group_by(Game) %>% 
+  mutate(sum = cumsum(value)) %>% 
+  summarize(sum = max(sum),
+            words = n()) %>% 
+  mutate(pos = (sum/words)*100) %>% 
+  mutate(stanpos = (pos - mean(pos))/sd(pos)) %>% 
+  left_join(results) %>% 
+  mutate(points = case_when(Result == "W" ~ 2,
+                            Result == "L" & is.na(OT) ~ 0,
+                            Result == "L" & !is.na(OT) ~ 1)) %>% 
+  mutate(meanpos = mean(pos)) %>% 
+  mutate(netpos = pos - meanpos)
+
+gamesum
+```
+```{r}
+gamesum %>% 
+  group_by(Result) %>% 
+  summarize(mean(stanpos))
+
+gamesum %>% 
+  ggplot(aes(Game, stanpos)) +
+  geom_col() +
+  geom_text(aes(label = Result))
+
+gamesum %>% 
+  ggplot(aes(stanpos,Result)) +
+  ggbeeswarm::geom_quasirandom(groupOnX = FALSE, width = 0.1)
+
+gamesum %>% 
+  mutate(rollmean = rollmean(points, 5, na.pad = TRUE, align = "right")) %>% 
+  mutate(rollmean = (rollmean - mean(rollmean, na.rm = TRUE))/sd(rollmean, na.rm = TRUE)) %>% 
+  select(Game,stanpos,rollmean) %>% 
+  gather(stanpos, rollmean, key = "metric", value = "value") %>% 
+  ggplot(aes(Game, value, group = metric, color = metric)) +
+  geom_line(size = 1.2) +
+  hrbrthemes::theme_ipsum_rc(grid = FALSE)
+
+gamesum %>% 
+  mutate(diff = GF-GA) %>% 
+  group_by(diff) %>% 
+  summarize(mean = mean(stanpos),
+            n = n())
+```
+
+
+
+```{r}
+stop_words1 = stop_words %>% 
+  filter(word != "good") %>% 
+  filter(word != "obviously")
+
+babcock %>% 
+  unnest_tokens(word, text) %>% 
+  full_join(get_sentiments("bing")) %>% 
+  anti_join(stop_words1) %>% 
+  count(word, sort = TRUE) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(word,n), n)) +
+  geom_col(fill ="#00205B", alpha = 0.8) +
+  coord_flip() +
+  geom_text(aes(label = n), color = "white", hjust = 1.2) +
+  ggthemes::theme_fivethirtyeight() +
+  labs(title = "Mike Babcock's most frequently used words", subtitle = "From '18/'19 Post-game press conferences", caption = "Chart by @MackinawStats", x="") +
+  theme(axis.title = element_text()) + ylab("Occurences")
+
+ggsave("babcockfreq.png")
+```
+```{r}
+babcock %>% 
+  unnest_tokens(word, text) %>% 
+  full_join(get_sentiments("bing")) %>% 
+  filter(!is.na(Game)) %>% 
+  count(word, sentiment, sort = TRUE) %>% 
+  filter(!is.na(sentiment)) %>% 
+  group_by(sentiment) %>% 
+  mutate(rank = row_number()) %>% 
+  filter(rank<11) %>% 
+  ggplot(aes(reorder(word,n),n)) +
+  geom_col(fill ="#00205B", alpha = 0.8) +
+  coord_flip() +
+  facet_wrap(~sentiment, scales = "free") +
+  ggthemes::theme_fivethirtyeight() +
+   geom_text(aes(label = n), color = "white", hjust = 1.2) +
+  theme(axis.title = element_text()) + ylab("Occurences") +
+  labs(title = "Babcock's Positive/Negative Words", subtitle = "From '18/'19 Post-game press conferences", x="", caption = "Chart by @MackinawStats")
+```
+```{r}
+gamesum %>% 
+  mutate(fill = ifelse(stanpos>0,"yes","no")) %>% 
+  ggplot(aes(Game, stanpos)) +
+  geom_col(aes(fill = fill)) +
+  geom_text(data = gamesum %>% filter(stanpos>0), aes(label = Result), vjust = -0.3) +
+  geom_text(data = gamesum %>% filter(stanpos<0), aes(label = Result), vjust = 0.3) +
+  ggthemes::theme_fivethirtyeight() +
+   theme(axis.title = element_text()) + ylab("Game") +
+  theme(legend.position = "none") +
+  labs(title = "Standardized Sentiment by Game", subtitle = "Labeled with Game Results (W/L)", caption = "Chart by @MackinawStats", y = "Standardized Sentiment") +
+   annotate(geom = "rect", 
+           xmin = 0, xmax = 82, ymin = 0, ymax = 3.5,
+           fill = "#006400", alpha = 0.1) +
+  annotate(geom = "rect", 
+           xmin = 0, xmax = 82, ymin = 0, ymax = -3.5,
+           fill = "red", alpha = 0.1)
+
+ggsave("sentimentstandarizedlog.png")
+
+gamesum %>% 
+  mutate(fill = ifelse(netpos>0,"yes","no")) %>% 
+  ggplot(aes(Game, netpos)) +
+  geom_col(aes(fill = fill)) +
+  geom_text(data = gamesum %>% filter(netpos>0), aes(label = Result), vjust = -0.3, size = 3.25) +
+  geom_text(data = gamesum %>% filter(netpos<0), aes(label = Result), vjust = 0.3, size = 3.25) +
+  ggthemes::theme_fivethirtyeight() +
+   theme(axis.title = element_text()) + ylab("Game") +
+  theme(legend.position = "none") +
+  labs(title = "Net Sentiment % by Game", subtitle = "Labeled with Game Results (W/L)", caption = "Chart by @MackinawStats", y = "Net Sentiment Percentage") +
+   annotate(geom = "rect", 
+           xmin = 0, xmax = 82, ymin = 0, ymax = 6,
+           fill = "#006400", alpha = 0.1) +
+  annotate(geom = "rect", 
+           xmin = 0, xmax = 82, ymin = 0, ymax = -4,
+           fill = "red", alpha = 0.1) +
+  ylim(-4,6) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"))
+
+ggsave("sentimentlog.png")
+
+
+gamesum %>% 
+  summarize(mean(pos))
+```
+
+```{r}
+gamesum %>% 
+  mutate(rollmean = rollmean(points, 5, na.pad = TRUE, align = "right")) %>% 
+  mutate(rollmean = (rollmean - mean(rollmean, na.rm = TRUE))/sd(rollmean, na.rm = TRUE)) %>% 
+  select(Game,stanpos,rollmean) %>% 
+  gather(stanpos, rollmean, key = "metric", value = "value") %>% 
+  ggplot(aes(Game, value, group = metric, color = metric)) +
+  geom_line(size = 1.2) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + ylab("Game") +
+  labs(title = "Standardized Sentiment vs. Rolling Points Mean", subtitle = "5 Game Rolling Average, Standardized", caption = "Chart by @MackinawStats", y = "Standard Deviation", color = "Metric") +
+  scale_color_discrete(labels = c("Points (5 Game Rolling Average)","Standardized Positivity %")) +
+  theme(legend.position = "top")
+
+ggsave("rollmeanpoints.png")
+  
+```
+```{r}
+gamesum %>% 
+  summarize(mean = mean(pos))
+
+average = gamesum %>% 
+  group_by(Result) %>% 
+  summarize(pos = mean(pos)) %>% 
+  mutate(Result = factor(Result, levels = c("W","L")))
+
+```
+
+
+```{r}
+gamesum %>% 
+  mutate(Result = factor(Result, levels = c("W","L"))) %>% 
+  ggplot(aes(pos, fill = Result)) +
+  geom_histogram(color = "black", alpha = 0.8, binwidth = 0.3) +
+  facet_wrap(~Result, ncol = 1) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + ylab("Game") +
+  labs(title = "Positivity % Distribution", subtitle = "Wins Make Mike Slightly Happier", x = "Positivity Percentage", y = "Count") +
+  scale_fill_manual(values = c("#00205B", "grey")) +
+  theme(
+  strip.background = element_blank(),
+  strip.text.x = element_blank()
+) +
+  theme(legend.position = "none") +
+  scale_x_continuous(labels = function(x) paste0(x, "%")) +
+  geom_vline(data = average, aes(xintercept = pos), color = "black", size = 1.1)
+
+ggsave("positivitydist.png")
+```
+
+
+
+
+

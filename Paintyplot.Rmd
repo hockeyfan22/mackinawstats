@@ -1,0 +1,75 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(ggridges)
+library(fmsb)
+library(reshape2)
+library(ggchicklet)
+
+gar = read_csv("gar9.4.csv") %>% 
+  group_by(Team) %>% 
+  mutate(rank = rank(-GAR)) %>%
+  ungroup()
+```
+
+```{r}
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+font_add_google("Homemade Apple", "Homemade Apple")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+atlantic = c("TOR", "MTL", "BOS", "BUF", "DET", "OTT", "TBL", "FLA")
+```
+```{r}
+gar = gar %>% 
+  filter(Team %in% atlantic) %>% 
+  mutate(Team = case_when(Team == "TOR" ~ "Toronto",
+                          Team == "MTL" ~ "Montreal",
+                          Team == "BOS" ~ "Boston",
+                          Team == "BUF" ~ "Buffalo",
+                          Team == "DET" ~ "Detroit",
+                          Team == "OTT" ~ "Ottawa",
+                          Team == "TBL" ~ "Tampa Bay",
+                          Team == "FLA" ~ "Florida")) %>% 
+  mutate(Team = fct_reorder(Team, -GAR))
+
+plot2 = gar %>% 
+  ggplot(aes(Team, GAR, color = Team)) +
+  geom_hline(yintercept = 0, alpha = 0.6, color = "grey") +
+  ggbeeswarm::geom_quasirandom(size = 3, alpha = 0.7) +
+  theme_pomological_fancy() +
+  scale_color_pomological() +
+  labs(title = "Goals Above Replacement, Atlantic Division", subtitle = "Data from Evolving Hockey", x= "", y = "Goals Above Replacement") +
+  theme(legend.position = "none") +
+  geom_text_repel(data = gar %>% filter(rank == 1), aes(label = player), family = "IBM Plex Sans", vjust = 1.25)
+
+paint_pomological(plot2)
+
+```
+

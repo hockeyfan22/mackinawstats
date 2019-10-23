@@ -1,0 +1,419 @@
+---
+title: "testgamechart"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(plotly)
+library(awtools)
+library(showtext)
+library(ggforce)
+library(ggridges)
+library(tidytext)
+
+nhl = read_csv("testleafs.csv") %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60)
+```
+
+```{r}
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+```
+
+```{r}
+goals = nhl %>% 
+  filter(event == "GOAL")
+```
+
+
+
+```{r}
+nhl %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#002868", "MTL" = "#CE1126"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR @ MTL,October 3rd", subtitle = "The Leafs prevailed against the Canadiens by forcing OT, where Auston Matthews scored his 1st\ngoal of the year on a 2 on 1 led by Patrick Marleau. The Leafs will take on the San Jose sharks next \nweek to kick of the first of three games in California.", y= "Expected Goals", x = "Time (Minutes)") +
+  theme(legend.position = "top") +
+  scale_y_continuous(breaks = c(0,1,2,3,4), labels = c("0","1","2","3","4")) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -4, size = 3, family = "IBM Plex Sans") 
+```
+```{r}
+nhl %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#002868", "MTL" = "#CE1126"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 3-MTL 2, October 3rd", subtitle = "The Leafs prevailed against the Canadiens by forcing OT, where Auston Matthews scored his 1st\ngoal of the year on a 2 on 1 led by Patrick Marleau. The Leafs will take on the San Jose sharks next \nweek to kick of the first of three games in California.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -4, size = 3, family = "IBM Plex Sans") +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "1-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "2-2", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "4-3", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") 
+  
+```
+
+```{r}
+nhl %>% 
+  ggplot(aes(time,xGoal, group = teamCode, fill = teamCode)) +
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  stat_smooth(
+        geom = 'area', method = 'loess', span = 1/3,
+        alpha = 1/2, aes(fill = teamCode)) +
+  scale_fill_manual(values = c("TOR" = "#002868", "MTL" = "#CE1126"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Expected Goals Game Flow") +
+  theme(legend.position = "none")
+```
+
+```{r}
+nhl %>% 
+  ungroup() %>% 
+  group_by(shooterName) %>% 
+  mutate(sumxG = sum(xGoal)) %>% 
+  ungroup() %>% 
+  mutate(teamCode = as.factor(teamCode),
+           shooterName = reorder_within(shooterName, sumxG, teamCode)) %>% 
+  ggplot(aes(xGoal, shooterName, color = teamCode)) +
+  geom_point(alpha = 0.4) +
+  facet_wrap(~teamCode, scales = "free_y") +
+  scale_y_reordered() +
+  scale_x_continuous(breaks = c(0.0,0.1,0.2,0.3,0.4), labels = c("0.0","0.1","0.2","0.3","0.4")) +
+  scale_color_manual(values = c("TOR" = "#002868", "MTL" = "#CE1126"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Expected Goal Contributions", y = "", x= "Expected Goals", subtitle = "Ordered by total xG contribution") +
+  theme(legend.position = "none")
+```
+
+```{r}
+sens = read_csv("shots_2019_1003.csv") %>% 
+  filter(game_id == 20001) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60)
+```
+```{r}
+goals = sens %>% 
+  filter(event == "GOAL")
+
+sens %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#002868", "OTT" = "#C52032"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 5-OTT 3, October 2nd", subtitle = "The Leafs prevailed against Ottawa, after naming John Tavares the 25th captain in franchise history. \nAfter giving up a quick goal, the Leafs had a lackluster first period, but ultimately took control \nin the second, dominating Expected Goals and scoring 4 goals in the period. The Leafs will take on \nColumbus on Friday, at Nationwide Arena.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -3, size = 3, family = "IBM Plex Sans") +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "0-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "4-2", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "5-3", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") 
+
+ggsave("sens1003.pdf")
+```
+```{r}
+sens %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#002868", "OTT" = "#C52032"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 5-OTT 3, October 2nd", subtitle = "The Leafs prevailed against Ottawa, after naming John Tavares the 25th captain in franchise history. \nAfter giving up a quick goal, the Leafs had a lackluster first period, but ultimately took control \nin the second, dominating Expected Goals and scoring 4 goals in the period. The Leafs will take on \nColumbus on Friday, at Nationwide Arena.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -3, size = 3, family = "IBM Plex Sans") +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "0-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "4-2", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "5-3", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+```
+
+```{r}
+jackets = read_csv("shots_2019_1003.csv") %>% 
+  filter(game_id == 20015) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60)
+```
+
+```{r}
+goals = jackets %>% 
+  filter(event == "GOAL")
+
+jackets %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#002868", "CBJ" = "#CE1126"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 4-CBJ 1, October 4th", subtitle = "The Leafs take down the Blue Jackets, buoyed by an impressive powerplay and some strong \ngoaltending from Andersen. The Leafs didn't dominate play at 5v5, and relied on outside shots \nfor their offense - the teams were basically even in Expected Goals for the entirity of the game. \nThe Leafs take on Montreal tonight with their first back-to-back of the season.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -3, size = 3, family = "IBM Plex Sans") +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "1-0", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "2-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "4-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") 
+
+ggsave("cbj1004.pdf")
+```
+```{r}
+mtl = shots %>% 
+  filter(game_id == 20019) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60)
+
+goals = mtl %>% 
+  filter(event == "GOAL")
+
+mtl %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#002868", "MTL" = "#AF1E2D"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 5-MTL 6 (SO), October 5th", subtitle = "The Leafs drop one to the Canadiens in the shootout, surrending a 4-1 lead in the 3rd period. \nLeafs might be happy to take the loser point, as Matthews tied up the game late with the net \nempty to force overtime. The Leafs get a day off and take on the St. Louis Blue on Monday.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -1, size = 3, family = "IBM Plex Sans", force = 5, point.padding = 1) +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "2-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "3-1", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "5-6", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("mtl1005.pdf")
+```
+
+```{r}
+library(downloader)
+download("http://peter-tanner.com/moneypuck/downloads/shots_2019.zip", dest="dataset.zip", mode="wb") 
+unzip ("dataset.zip", exdir = "C:\\Users\\rghizzoni\\Documents\\NHL")
+shots = read_csv("shots_2019.csv")
+```
+
+```{r}
+stl = shots %>% 
+  filter(game_id == 20034) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60)
+
+goals = stl %>% 
+  filter(event == "GOAL")
+
+stl %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) + 
+  scale_color_manual(values = c("TOR" = "#002868", "STL" = "#FCB514"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 2-STL 3, October 7th", subtitle = "The Leafs were defeated by the defending Stanley Cup champions, St. Louis Blues, on Monday night. \nThe Leafs were the more dangerous team, winning the expected goals battle and getting to \nthe high scoring areas, but ran into a hot goaltender in Binnington. The team has another difficult matchup \non Thursday against the Lightning.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -2, size = 3, family = "IBM Plex Sans", force = 5, point.padding = 0.5) +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "0-0", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "2-2", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "2-3", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("stl1007.pdf")
+
+```
+```{r}
+tbl = shots %>% 
+  filter(game_id == 20047) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60)
+
+goals = tbl %>% 
+  filter(event == "GOAL")
+
+tbl %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_vline(xintercept = c(20,40,60), color = "grey") +
+  geom_line(size = 1.5) + 
+  scale_color_manual(values = c("TOR" = "#002868", "T.B" = "black"), name = "Team") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "TOR 3-TBL 7, October 10th", subtitle = "The Leafs were thrashed at home against the Lightning, giving up 7 goals on their home ice, \nThe teams were relatively even through a sloppy first period, but Tampa pulled away in the second \nand third, making the Leafs pay for taking penalties. The Leafs will hope to rebound against Detroit.", y= "Expected Goals", x = "Time (Minutes)", caption = "Chart by @MackinawStats") +
+  expand_limits(y=5) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5), labels = c(0,1,2,3,4,5)) +
+  geom_point(data = goals, fill = "white", size = 4, alpha = 0.9, shape = 21, stroke = 1.5, aes(color = teamCode)) +
+  geom_text_repel(data = goals, aes(label = shooterName), vjust = -5, size = 3, family = "IBM Plex Sans", force = 5, point.padding = 0) +
+    annotate(geom = "rect", 
+           xmin = 0, xmax = 20, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 20, xmax = 40, ymin = 4.5, ymax = 5,
+           fill = "grey", alpha = 0.4) +
+  annotate(geom = "rect", 
+           xmin = 40, xmax = 60, ymin = 4.5, ymax = 5,
+           fill = "#002868", alpha = 0.4) +
+  annotate(geom = "text",
+           x = 10, y = 4.75, size = 4,
+           label = "3-4", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 30, y = 4.75, size = 4,
+           label = "3-5", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 50, y = 4.75, size = 4,
+           label = "3-7", hjust = 0, family = "IBM Plex Sans") +
+  annotate(geom = "text",
+           x = 0, y = 5.15, size = 3.5,
+           label = "Score:", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("tbl1010.pdf")
+```
+
+

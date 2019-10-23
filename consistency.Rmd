@@ -1,0 +1,318 @@
+---
+title: "Consistency"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(plotly)
+library(awtools)
+library(showtext)
+library(ggforce)
+library(ggridges)
+library(tidytext)
+library(rayshader)
+library(rgl)
+
+nhl = read_csv("shots_2018.csv") %>% 
+  mutate(arenaAdjustedXCord = case_when(teamCode == "TOR" ~ abs(arenaAdjustedXCord),
+                                        teamCode == "MTL" ~ -abs(arenaAdjustedXCord),
+                                        TRUE ~ arenaAdjustedXCord)) %>% 
+  mutate(arenaAdjustedYCord = arenaAdjustedYCord * -1) %>% 
+  mutate(totalplayersshootingteam = shootingTeamDefencemenOnIce + shootingTeamForwardsOnIce,
+         totalplayersdefendingteam = defendingTeamDefencemenOnIce + defendingTeamForwardsOnIce) %>% 
+  mutate(pp = case_when(totalplayersshootingteam>totalplayersdefendingteam~ "PP", TRUE ~ "0")) %>% 
+  group_by(shooterName) %>% 
+  mutate(games = row_number()) %>% 
+  filter(games>20)
+```
+```{r}
+nhl %>% 
+  filter(teamCode == "TOR") %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  group_by(shooterName, game_id) %>% 
+  summarize(xGoal = sum(xGoal)) %>% 
+  ungroup() %>% 
+  group_by(shooterName) %>% 
+  mutate(avg = mean(xGoal)) %>% 
+  mutate(sd = (xGoal - avg)^2) %>% 
+  mutate(diff = sum(sd)) %>% 
+  mutate(consistency = diff/avg) %>% 
+  summarize(consistency = max(consistency)) %>% 
+  arrange(desc(consistency))
+```
+```{r}
+nhl %>% 
+  filter(teamCode == "TOR") %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  group_by(shooterName, game_id) %>% 
+  summarize(xGoal = sum(xGoal)) %>% 
+  ungroup() %>% 
+  group_by(shooterName) %>% 
+  mutate(avg = mean(xGoal)) %>% 
+  mutate(sd = abs(xGoal - avg)) %>% 
+  mutate(diff = sum(sd)) %>% 
+  mutate(consistency = diff/avg) %>% 
+  summarize(consistency = max(consistency)) %>% 
+  arrange(desc(consistency))
+```
+```{r}
+consistency = nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  group_by(shooterName, game_id) %>% 
+  summarize(xGoal = sum(xGoal)) %>% 
+  ungroup() %>% 
+  group_by(shooterName) %>% 
+  mutate(avg = mean(xGoal)) %>% 
+  mutate(diff = abs(xGoal - avg)) %>% 
+  mutate(sd = sd(xGoal)) %>% 
+  mutate(diff_sd = diff/sd) %>% 
+  mutate(sum = diff_sd + diff) %>% 
+  mutate(mean = mean(sum)) %>% 
+  mutate(consistency = abs(1-mean)*10) %>% 
+  summarize(consistency = max(consistency)) %>% 
+  arrange(desc(consistency))
+```
+
+
+```{r}
+nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(Goal = ifelse(event == "GOAL",1,0)) %>% 
+  group_by(shooterName) %>% 
+  summarize(Goal = sum(Goal)) %>% 
+  arrange(desc(Goal)) %>% 
+  mutate(bucket = case_when(Goal>40 ~ "star",
+                            Goal>20 & Goal<40 ~ "middle",
+                            Goal<20 ~ "dud")) %>% 
+  left_join(consistency) %>% 
+  ggplot(aes(consistency, Goal, color = bucket)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se=F, color="grey", alpha = 0.6) +
+  theme_ipsum_rc(grid = FALSE) +
+  ylim(0,60) +
+  labs(title = "Consistency vs. Goals in the NHL", subtitle = "Data from Moneypuck", x = "Consistency", y= "Goals") +
+  theme(legend.position = "none")
+
+ggsave("consistency.png")
+```
+```{r}
+nhl %>% 
+  filter(teamCode == "TOR") %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  group_by(shooterName, game_id) %>% 
+  summarize(xGoal = sum(xGoal)) %>% 
+  select(-game_id) %>% 
+  ungroup() %>% 
+  mutate(shooterName = fct_reorder(shooterName, xGoal)) %>% 
+  ggplot(aes(x = xGoal, y = shooterName, fill = ..x..)) +
+  geom_density_ridges_gradient(rel_min_height = 0.01, alpha = 0.2, jittered_points = TRUE) +
+  scale_fill_viridis(option = "C") +
+  labs(title = "Leafs' Expected Goals Game Distributions", subtitle = "Ordered by Median Expected Goals Per Game, Data from MoneyPuck", x = "Expected Goals (Per Game Basis)", y = "") +
+  theme_ipsum_rc(grid = FALSE) +
+  theme(legend.position = "none")
+
+ggsave("leafsridges.png")
+```
+```{r}
+nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(Goal = ifelse(event == "GOAL",1,0)) %>% 
+  group_by(shooterName) %>% 
+  summarize(Goals = sum(Goal)) %>% 
+  arrange(desc(Goals)) %>% 
+  left_join(consistency) %>%
+  mutate(consistency = round(consistency,2)) %>% 
+  head(20) %>% 
+  gt() %>% 
+  data_color(
+    columns = vars(consistency),
+    colors = scales::col_numeric(
+      palette = c("#F8F8F8","#30a2da"),
+      domain = NULL
+      )
+    ) %>% 
+  tab_style(
+    style = cell_text(
+      weight = "bold"
+    ),
+    locations = cells_data(
+      rows = shooterName == "Auston Matthews"
+    )
+  ) %>% 
+  cols_label(shooterName = "Player",
+             consistency = "xG Consistency") %>% 
+  tab_options(
+    table.border.top.color = "white",
+    row.striping.include_table_body = FALSE,
+    row.padding = px(4)
+  )
+```
+
+```{r}
+#COEFFICIENT OF VARIATION APPROACH
+
+consistency2 = nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  group_by(shooterName, game_id) %>% 
+  summarize(xGoal = sum(xGoal)) %>% 
+  ungroup() %>% 
+  group_by(shooterName) %>% 
+  mutate(mean = mean(xGoal)) %>% 
+  mutate(sd = sd(xGoal)) %>% 
+  mutate(consistency = sd/mean) %>% 
+  summarize(consistency = round(max(consistency),2),
+            xGoalpergame = round(max(mean),2),
+            standard_dev = round(max(sd),2))
+```
+
+```{r}
+nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(Goal = ifelse(event == "GOAL",1,0)) %>% 
+  group_by(shooterName, teamCode) %>% 
+  summarize(Goals = sum(Goal)) %>% 
+  arrange(desc(Goals)) %>% 
+  left_join(consistency2) %>% 
+  select(-xGoalpergame, -standard_dev) %>% 
+  ungroup() %>% 
+  gt() %>% 
+  data_color(
+    columns = vars(consistency),
+    colors = scales::col_numeric(
+      palette = c("#F8F8F8","#30a2da"),
+      domain = NULL
+      )
+    ) %>% 
+  tab_style(
+    style = cell_text(
+      weight = "bold"
+    ),
+    locations = cells_data(
+      rows = shooterName == "Auston Matthews"
+    )
+  ) %>% 
+  cols_label(shooterName = "Player",
+             teamCode = "Team",
+             consistency = "xG Consistency") %>% 
+  tab_options(
+    table.border.top.color = "white",
+    row.striping.include_table_body = FALSE,
+    row.padding = px(4)
+  )
+```
+```{r}
+nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(Goal = ifelse(event == "GOAL",1,0)) %>% 
+  group_by(shooterName, teamCode) %>% 
+  summarize(Goals = sum(Goal)) %>% 
+  arrange(desc(Goals)) %>% 
+  left_join(consistency2) %>% 
+  mutate(bucket = case_when(Goals>40 ~ "star",
+                            Goals>11 & Goals<40 ~ "middle",
+                            Goals<11 ~ "dud",
+                            TRUE ~ "middle")) %>% 
+  ggplot(aes(consistency, Goals, color = bucket)) +
+  geom_vline(xintercept = 0.93, color = "grey") +
+  geom_hline(yintercept = 11.3, color = "grey") +
+  geom_jitter(alpha = 0.4, size = 3) +
+  theme_ipsum_rc(grid = FALSE) +
+  ylim(0,60) +
+  labs(title = "Consistency vs. Goals in the NHL", subtitle = "Data from Moneypuck", x = "Expected Goals Consistency", y= "Goals") +
+  theme(legend.position = "none")
+
+ggsave("consistency.png")
+```
+```{r}
+nhl %>% 
+  filter(teamCode == "TOR") %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  group_by(shooterName, game_id) %>% 
+  summarize(xGoal = sum(xGoal)) %>% 
+  select(-game_id) %>% 
+  ungroup() %>% 
+  mutate(shooterName = fct_reorder(shooterName, xGoal)) %>% 
+  ggplot(aes(x = xGoal, y = shooterName, fill = ..x..)) +
+  geom_density_ridges_gradient(rel_min_height = 0.01, alpha = 0.2, jittered_points = TRUE) +
+  scale_fill_viridis(option = "C") +
+  labs(title = "Leafs' Expected Goals Game Distributions", subtitle = "Ordered by Median Expected Goals Per Game, Data from MoneyPuck", x = "Expected Goals (Per Game Basis)", y = "") +
+  theme_ipsum_rc(grid = FALSE) +
+  theme(legend.position = "none")
+```
+```{r}
+nhl %>% 
+  filter(teamCode == "TOR") %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(Goal = ifelse(event == "GOAL",1,0)) %>% 
+  group_by(shooterName, teamCode) %>% 
+  summarize(Goals = sum(Goal)) %>% 
+  arrange(desc(Goals)) %>% 
+  left_join(consistency2) %>% 
+  select(shooterName, teamCode, xGoalpergame, standard_dev, consistency) %>% 
+  ungroup() %>% 
+  arrange(desc(xGoalpergame)) %>% 
+  gt() %>% 
+  data_color(
+    columns = vars(consistency),
+    colors = scales::col_numeric(
+      palette = c("#F8F8F8","#30a2da"),
+      domain = NULL
+      )
+    ) %>% 
+  cols_label(shooterName = "Player",
+             teamCode = "Team",
+             xGoalpergame = "xG Per Game",
+             standard_dev = "Standard Deviation",
+             consistency = "xG Consistency Rating") %>% 
+  tab_options(
+    table.border.top.color = "white",
+    row.striping.include_table_body = FALSE,
+    row.padding = px(4)
+  )
+```
+```{r}
+nhl %>% 
+  filter(playerPositionThatDidEvent == "C" | playerPositionThatDidEvent == "L" | playerPositionThatDidEvent == "R") %>% 
+  mutate(Goal = ifelse(event == "GOAL",1,0)) %>% 
+  group_by(shooterName, teamCode) %>% 
+  summarize(xGoals = sum(xGoal)) %>% 
+  arrange(desc(xGoals)) %>% 
+  left_join(consistency2) %>% 
+  mutate(bucket = case_when(xGoals>11 ~ "star",
+                            xGoals<11 ~ "dud",
+                            TRUE ~ "dud")) %>% 
+  ggplot(aes(consistency, xGoals, color = bucket)) +
+  geom_vline(xintercept = 0.93, color = "grey") +
+  geom_hline(yintercept = 11, color = "grey") +
+  geom_jitter(alpha = 0.4, size = 3) +
+  theme_ipsum_rc(grid = FALSE) +
+  ylim(0,40) +
+  labs(title = "Consistency vs. Expected Goals in the NHL", subtitle = "Data from Moneypuck", x = "Expected Goals Consistency", y= "Expected Goals") +
+  theme(legend.position = "none")
+
+ggsave("consistencymatrix.png")
+```
+

@@ -1,0 +1,239 @@
+---
+title: "leafsjitter"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("evolvinghockeydata.csv") %>% 
+  filter(GP>20)
+atlantic = nhl %>% 
+  filter(Team == "T.B" | Team =="TOR" | Team == "FLA" | Team == "MTL" | Team == "DET" | Team == "BUF"| Team == "BOS" | Team == "OTT")
+
+metro = nhl %>% 
+  filter(Team == "WSH" | Team =="NYI" | Team == "PIT" | Team == "CAR" | Team == "CBJ" | Team == "PHI" | Team == "NYR" | Team == "N.J")
+
+central = nhl %>% 
+  filter(Team == "NSH" | Team =="WPG" | Team == "STL" | Team == "DAL" | Team == "COL" | Team == "CHI" | Team == "MIN")
+
+pacific = nhl %>% 
+  filter(Team == "CGY" | Team =="S.J" | Team == "VGK" | Team == "ARI" | Team == "VAN" | Team == "ANA" | Team == "EDM" | Team == "L.A")
+
+```
+
+```{r}
+extrafont::loadfonts(device = "win")
+
+theme_set(theme_light(base_size = 15, base_family = "Poppins"))
+
+atlantic %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(Team, Points_60, color = Team)) +
+  coord_flip() +
+  geom_jitter(size = 3, alpha = 0.5, width = 0.17) +
+  theme(legend.position = "none") +
+  scale_color_uchicago() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 12),
+        axis.text.x = element_text(family = "Roboto Mono", size = 10),
+        panel.grid = element_blank())
+
+```
+```{r}
+avg = atlantic %>% 
+  group_by(Team) %>% 
+  summarize(avg = mean(Points_60))
+
+nhl_avg = nhl %>% 
+  summarize(points = mean(Points_60)) %>% 
+  pull(points)
+  
+
+atlantic %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(reorder(Team, Points_60), Points_60, color = Team)) +
+  coord_flip() +
+  geom_jitter(size = 3, alpha = 0.5, width = 0.17) +
+  geom_point(data = avg, aes(Team,avg, size = 2)) +
+  geom_hline(aes(yintercept = nhl_avg), color = "grey70", size = 0.6)+
+  theme(legend.position = "none") +
+  scale_color_uchicago() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none")
+```
+```{r}
+avg = atlantic %>% 
+  group_by(Team) %>% 
+  summarize(avg = mean(Points_60))
+
+nhl_avg = nhl %>% 
+  summarize(points = mean(Points_60)) %>% 
+  pull(points)
+  
+
+atlantic %>% 
+  group_by(Team) %>% 
+  mutate(team_avg = mean(Points_60)) %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(reorder(Team, Points_60), Points_60, color = Team)) +
+  coord_flip() +
+  geom_jitter(size = 3, alpha = 0.5, width = 0.17) +
+  geom_point(aes(Team,team_avg, size = 2)) +
+  geom_hline(aes(yintercept = nhl_avg), color = "grey70", size = 0.6)+
+  theme(legend.position = "none") +
+  scale_color_uchicago() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_segment(aes(x = Team, xend = Team,
+                   y = nhl_avg, yend = team_avg),
+               size = 0.8) +
+  labs(title = "Do the Maple Leafs really need more depth?", subtitle = "2018-19 Points Per 60 among forwards with GP>20", x="", y= "Points Per 60 minutes")
+
+ggsave("leafsdepth.png")
+```
+```{r}
+avg = metro %>% 
+  group_by(Team) %>% 
+  summarize(avg = mean(Points_60))
+
+nhl_avg = nhl %>% 
+  summarize(points = mean(Points_60)) %>% 
+  pull(points)
+  
+
+metro %>% 
+  group_by(Team) %>% 
+  mutate(team_avg = mean(Points_60)) %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(reorder(Team, Points_60), Points_60, color = Team)) +
+  coord_flip() +
+  geom_jitter(size = 3, alpha = 0.5, width = 0.17) +
+  geom_point(aes(Team,team_avg, size = 2)) +
+  geom_hline(aes(yintercept = nhl_avg), color = "grey70", size = 0.6)+
+  theme(legend.position = "none") +
+  scale_color_uchicago() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_segment(aes(x = Team, xend = Team,
+                   y = nhl_avg, yend = team_avg),
+               size = 0.8) +
+  labs(title = "Metropolitan Division", subtitle = "2018-19 Points Per 60 among forwards with GP>20", x="", y= "Points Per 60 minutes")
+
+ggsave("metro.png")
+```
+
+```{r}
+avg = central %>% 
+  group_by(Team) %>% 
+  summarize(avg = mean(Points_60))
+
+nhl_avg = nhl %>% 
+  summarize(points = mean(Points_60)) %>% 
+  pull(points)
+  
+
+central %>% 
+  group_by(Team) %>% 
+  mutate(team_avg = mean(Points_60)) %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(reorder(Team, Points_60), Points_60, color = Team)) +
+  coord_flip() +
+  geom_jitter(size = 3, alpha = 0.5, width = 0.17) +
+  geom_point(aes(Team,team_avg, size = 2)) +
+  geom_hline(aes(yintercept = nhl_avg), color = "grey70", size = 0.6)+
+  theme(legend.position = "none") +
+  scale_color_uchicago() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_segment(aes(x = Team, xend = Team,
+                   y = nhl_avg, yend = team_avg),
+               size = 0.8) +
+  labs(title = "Central Division", subtitle = "2018-19 Points Per 60 among forwards with GP>20", x="", y= "Points Per 60 minutes")
+
+ggsave("central.png")
+```
+
+```{r}
+avg = pacific %>% 
+  group_by(Team) %>% 
+  summarize(avg = mean(Points_60))
+
+nhl_avg = nhl %>% 
+  summarize(points = mean(Points_60)) %>% 
+  pull(points)
+  
+
+pacific %>% 
+  group_by(Team) %>% 
+  mutate(team_avg = mean(Points_60)) %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(reorder(Team, Points_60), Points_60, color = Team)) +
+  coord_flip() +
+  geom_jitter(size = 3, alpha = 0.5, width = 0.17) +
+  geom_point(aes(Team,team_avg, size = 2)) +
+  geom_hline(aes(yintercept = nhl_avg), color = "grey70", size = 0.6)+
+  theme(legend.position = "none") +
+  scale_color_uchicago() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_segment(aes(x = Team, xend = Team,
+                   y = nhl_avg, yend = team_avg),
+               size = 0.8) +
+  labs(title = "Pacific Division", subtitle = "2018-19 Points Per 60 among forwards with GP>20", x="", y= "Points Per 60 minutes")
+
+ggsave("pacific.png")
+```
+
+```{r}
+avg = metro %>% 
+  group_by(Team) %>% 
+  summarize(avg = mean(Points_60))
+
+nhl_avg = nhl %>% 
+  summarize(points = mean(Points_60)) %>% 
+  pull(points)
+  
+
+nhl %>% 
+  group_by(Team) %>% 
+  mutate(team_avg = mean(Points_60)) %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(reorder(Team, Points_60), Points_60, color = Team)) +
+  coord_flip() +
+  geom_point(size = 1, alpha = 0.5, width = 0.17) +
+  geom_point(aes(Team,team_avg, size = 0.1)) +
+  geom_hline(aes(yintercept = nhl_avg), color = "grey70", size = 0.6)+
+  theme(legend.position = "none") +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_segment(aes(x = Team, xend = Team,
+                   y = nhl_avg, yend = team_avg),
+               size = 5) +
+  labs(title = "National Hockey League", subtitle = "2018-19 Points Per 60 among forwards with GP>20", x="", y= "Points Per 60 minutes")
+
+ggsave("nhllol.png")
+```
+
+

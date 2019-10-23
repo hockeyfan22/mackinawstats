@@ -1,0 +1,297 @@
+---
+title: "salary"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+
+nhl = read_csv("salaries.csv") 
+```
+```{r}
+nhl %>% 
+  ggplot(aes(`Cap Hit`, Tm, color = Tm)) +
+  geom_point(alpha = 0.6) +
+  scale_x_continuous(labels = scales::comma) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none")
+```
+```{r}
+preseason = nhl %>% 
+  group_by(Tm) %>% 
+  summarize(gini = Gini(`Cap Hit`)) %>% 
+  mutate(gini = gini*100) %>% 
+  mutate(gini = round(gini,0)) %>% 
+  arrange(desc(gini)) %>% 
+  mutate(Tm = fct_reorder(Tm,gini))
+
+nhl %>% 
+  ggplot(aes(gini, Tm)) +
+  geom_point(aes(color = Tm, size = gini), alpha = 0.4) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  theme(axis.title = element_text()) + xlab('Gini Coefficient') +
+  labs(title = "Gini coefficients in the NHL", subtitle = "Top 20, data from Hockeyreference.com", y="") +
+  scale_y_discrete(expand = c(0.1, 0))
+
+ggsave("gininhl.png")
+```
+
+```{r}
+giniwins = read_csv("giniwins.csv")
+```
+```{r}
+giniwins %>% 
+  ggplot(aes(Gini,Wins)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+```{r}
+nhl %>% 
+  filter(Tm == "TOR") %>% 
+  mutate(player = fct_reorder(player, `Cap Hit`)) %>% 
+  mutate(`Cap Hit` = `Cap Hit`/1000000) %>% 
+  ggplot(aes(`Cap Hit`, player)) +
+  geom_point(aes(size = `Cap Hit`, color = player), alpha = 0.4) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_x_continuous(labels = scales::dollar) +
+  scale_y_discrete(expand = c(0.1, 0)) +
+  scale_size_continuous(name="area", range = c(1,7)) +
+  theme(axis.title = element_text()) + xlab('Cap Hit, $M') +
+  labs(title = "Leafs salary distribution, 7/7/2019", subtitle = "Data from HockeyReference.com", y="") +
+  theme(axis.title.y = element_text(vjust=-10))
+
+ggsave("leafssalary.png")
+```
+```{r}
+#MERGING SALARY DATA WITH POINT PRODUCTION
+salary = nhl %>% 
+  mutate(player = stringi::stri_trans_general(player, 'latin-ascii'))
+
+points = read_csv("skatertotals.csv") %>% 
+  filter(season == "20182019")
+
+gar = read_csv("GAR.csv") %>% 
+  filter(season == "20182019")
+
+points60 = read_csv("allstatsrates.csv")%>% 
+  filter(season == "20182019")
+
+library(fuzzyjoin)
+
+update = stringdist_inner_join(salary, points, ignore_case = TRUE)
+updateGAR = stringdist_inner_join(salary, gar, ignore_case = TRUE)
+update60 = stringdist_inner_join(salary, points60, ignore_case = TRUE)
+
+```
+```{r}
+update2 = update %>% 
+  filter(GP>20) %>% 
+  mutate(cap = `Cap Hit`/1000000) %>% 
+  mutate(pointpermil = Points/cap) %>% 
+  arrange(desc(pointpermil)) 
+
+update2 %>% 
+  filter(player.y == "KENNY.AGOSTINO")
+  ggplot(aes(x = pointpermil, y = position)) +
+  geom_point(alpha = 0.2) +
+  geom_point(data = update2 %>% filter(player.y == "JASON.SPEZZA"), color = "orange", size = 4, alpha = 0.9) +
+  theme_fivethirtyeight() +
+  geom_text_repel(data = update2 %>% filter(player.y == "JASON.SPEZZA"), aes(label = player.x), point.padding = 0.2) +
+  geom_point(data = update2 %>% filter(player.y == "KENNY.AGOSTINO"), color = "orange", size = 4, alpha = 0.9) +
+  geom_text_repel(data = update2 %>% filter(player.y == "KENNY.AGOSTINO"), aes(label = player.x), point.padding = 0.2)
+```
+```{r}
+update = update %>% 
+  filter(Tm == "TOR") %>% 
+  group_by(player.x) %>% 
+  summarize(caphit = sum(`Cap Hit`),
+            points = sum(Points),
+            toi = sum(TOI)) %>% 
+  mutate(caphit = caphit/1000000)
+
+update %>% 
+  ggplot(aes(caphit, points, color = player.x)) +
+  geom_point(alpha = 0.4, size = 5) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + xlab('Cap Hit') +
+  labs(title = "Cap Hit vs. Points among Maple Leafs players", subtitle = "data from HockeyReference & Evolving Hockey", y = "Points") +
+  scale_x_continuous(labels = scales::dollar) +
+  theme(legend.position = "none") +
+  geom_text_repel(data = update %>% filter(points>30), aes(label = player.x))
+```
+```{r}
+update60 = update60 %>% 
+  filter(Tm == "TOR" | Team =="TOR") %>% 
+  group_by(player.x) %>% 
+  summarize(caphit = sum(`Cap Hit`),
+            points60 = sum(Points_60),
+            toi = sum(TOI)) %>% 
+  mutate(caphit = caphit/1000000)
+```
+```{r}
+
+update60 %>% 
+  ggplot(aes(caphit, points60)) +
+  geom_point(data = update60 %>% filter(points60>2 & caphit<6), alpha = 0.8, size = 4, color = "white") +
+  geom_point(data = update60 %>% filter(points60<2 | caphit>6), alpha = 0.4, size = 4, color = "grey") +
+  theme_ft_rc() +
+  theme(axis.title = element_text()) + xlab('Cap Hit $M') +
+  labs(title = "Potential Bargain Contracts for the Leafs", subtitle = "Cap Hit vs. Points among Maple Leafs players", y = "Points Per 60", caption = 'Chart created by @MackinawStats') +
+  scale_x_continuous(labels = scales::dollar) +
+  theme(legend.position = "none") +
+  geom_text_repel(data = update60 %>% filter(points60>2 & caphit<6), aes(label = player.x), point.padding = 0.2, size = 3, color =  "white")
+
+ggsave("leafsbargains.png")
+```
+```{r}
+staticplot = update60 %>% 
+  ggplot(aes(caphit, points60, text = paste("Player:", player.x))) +
+  geom_point(data = update60 %>% filter(points60>2 & caphit<6), alpha = 0.8, size = 4, color = "white") +
+  geom_point(data = update60 %>% filter(points60<2 | caphit>6), alpha = 0.4, size = 4, color = "grey") +
+  theme_ft_rc() +
+  theme(axis.title = element_text()) + xlab('Cap Hit $M') +
+  labs(title = "Potential Bargain Contracts for the Leafs", subtitle = "Cap Hit vs. Points among Maple Leafs players", y = "Points Per 60", caption = 'Chart created by @MackinawStats') +
+  scale_x_continuous(labels = scales::dollar) +
+  theme(legend.position = "none")
+
+interactiveplot = ggplotly(staticplot)
+interactiveplot
+
+interactiveplot$sizingPolicy$padding <- "0"
+htmlwidgets::saveWidget(
+  interactiveplot, "leafsbargains.html", libdir = "lib",
+  title = "Leafs Bargains",
+  selfcontained = FALSE
+)
+```
+```{r}
+desc_cici = "Cody Ceci is the only Leafs player with a negative GAR and a contract above $2M"
+
+leafsplot = updateGAR %>%
+  filter(GP>20) %>% 
+  mutate(cap = `Cap Hit`/1000000) %>% 
+  group_by(player.x, Tm) %>% 
+  summarize(gar = sum(GAR_60),
+            cap = max(cap))
+
+leafsplot %>% 
+  ggplot(aes(cap, gar)) +
+  geom_hline(yintercept = 0, color = "blue", alpha = 0.15) +
+  geom_jitter(data = leafsplot %>% filter(Tm != "TOR"), alpha = 0.4) +
+  geom_point(data = leafsplot %>% filter(Tm == "TOR"), color = "orange", alpha = 0.8, size =3) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + xlab('Cap Hit $M') +
+  labs(title = "The Leafs Have Avoided Bad Contracts", subtitle = "Leafs players in orange, data from Evolving Hockey & HockeyReference" , y = "GAR (Goals Above Replacement", caption = "Created by @MackinawStats") +
+  geom_mark_circle(aes(filter = player.x == "Cody Ceci", label = "Cody Ceci",
+                        description = desc_cici), label.family = "Roboto Condensed", label.fontsize = c(12, 8), fill = "blue", alpha = 0.1)
+
+ggsave("leafsgar.png")
+```
+```{r}
+leafsplot %>% 
+  ggplot(aes(cap, gar)) +
+  geom_hline(yintercept = 0, color = "blue", alpha = 0.15) +
+  geom_jitter(data = leafsplot %>% filter(Tm != "EDM"), alpha = 0.4) +
+  geom_point(data = leafsplot %>% filter(Tm == "EDM"), color = "orange", alpha = 0.8, size =3) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + xlab('Cap Hit $M') +
+  labs(title = "The Oilers Have Not", subtitle = "Among players GP>20, data from Evolving Hockey & HockeyReference" , y = "GAR (Goals Above Replacement", caption = "Created by @MackinawStats")
+
+ggsave("oilersgar.png")
+```
+```{r}
+leafsplot %>% 
+  ggplot(aes(cap, gar)) +
+  geom_hline(yintercept = 0, color = "blue", alpha = 0.15) +
+  geom_jitter(data = leafsplot %>% filter(Tm != "TBL"), alpha = 0.4) +
+  geom_point(data = leafsplot %>% filter(Tm == "TBL"), color = "orange", alpha = 0.8, size =3) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + xlab('Cap Hit $M') +
+  labs(title = "Tampa GAR vs. Cap Hit", subtitle = "Among players GP>20, data from Evolving Hockey & HockeyReference" , y = "GAR (Goals Above Replacement", caption = "Created by @MackinawStats")
+
+ggsave("tampagar.png")
+```
+```{r}
+leafsplot %>% 
+  ungroup() %>% 
+  mutate(Tm = as_factor(Tm)) %>% 
+  filter(gar<0 & cap>2) %>% 
+  group_by(Tm, .drop = FALSE) %>% 
+  count(.drop = FALSE) %>% 
+  arrange(desc(n)) %>% 
+  left_join(giniwins) %>% 
+  ggplot(aes(n,Wins)) +
+  geom_point(color = "white", size = 3, alpha = 0.9) +
+  geom_smooth(method = "lm", se = F, color = "orange") +
+  theme_ft_rc() +
+  labs(title = "Impact of Dead Weight on Wins", subtitle = "Trend line represents a linear regression model fit, data from EvolvingHockey", caption = "chart by @MackinawStats", x = "Number of Players below replacement level & cap hit above $2M")
+
+
+ggsave("deadweight.png")
+```
+```{r}
+modeldata = leafsplot %>% 
+  ungroup() %>% 
+  mutate(Tm = as_factor(Tm)) %>% 
+  filter(gar<0 & cap>2) %>% 
+  group_by(Tm, .drop = FALSE) %>% 
+  count(.drop = FALSE) %>% 
+  arrange(desc(n)) %>% 
+  left_join(giniwins)
+
+model = lm(Wins ~ n, data = modeldata)
+summary(model)
+```
+```{r}
+season = read_csv("contracts914.csv")
+
+season %>% 
+  group_by(Tm) %>% 
+  summarize(gini = Gini(`Cap Hit`, na.rm = TRUE)) %>% 
+  mutate(gini = gini*100) %>% 
+  mutate(gini = round(gini,0)) %>% 
+  arrange(desc(gini)) %>% 
+  mutate(Tm = fct_reorder(Tm,gini)) %>% 
+  gt() %>% 
+  data_color(
+    columns = vars(gini),
+    colors = scales::col_numeric(
+      palette = c("#F8F8F8","#30a2da"),
+      domain = NULL
+      )
+    ) %>% 
+  cols_label(Tm = "Team",
+             gini = "Gini Coefficient") %>% 
+  tab_options(
+    table.border.top.color = "white",
+    row.striping.include_table_body = FALSE,
+    row.padding = px(4)
+  )
+
+
+```
+

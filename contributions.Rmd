@@ -1,0 +1,310 @@
+---
+title: "contributions"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("tulloch.csv") %>% 
+  filter(season == "20182019")
+```
+
+```{r}
+nhl = nhl %>% 
+  group_by(Team) %>% 
+  mutate(teamG = sum(G),
+         A = A1 + A2,
+         teamA = sum(A)) %>% 
+  mutate(gcont = (G/teamG)*100,
+         acont = (A/teamA)*100)
+
+desc_dry = "Draisaitl leads in goal contribution"
+
+nhl %>% 
+  ggplot(aes(acont,gcont)) + 
+  geom_point(data = nhl %>%
+                    filter(gcont < 20 | acont < 15),
+             color = "grey20", size = 3, alpha = 0.2) +
+  geom_point(data = nhl %>%
+                    filter(gcont > 20 | acont > 15),
+             color = "red", size = 4) +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto Condensed"),
+        title = element_text(size = 18),
+        plot.subtitle = element_text(size = 16),
+        plot.caption = element_text(size = 10),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12)) + 
+  geom_hline(yintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_vline(xintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_text_repel(data = nhl %>%
+                    filter(gcont > 20 | acont > 15,),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 3, 
+                  min.segment.length = 0, segment.color = "red",
+                  point.padding = 0.5) +
+  labs(title = "Goal Contribution Matrix: NHL (2018-2019 Season)", subtitle = "Team Goal Involvement as Percentage of Total Team Goals/Assists", x="Percentage of Team Goals Assisted", y = "Percentage of Team Goals Scored")
+
+ggsave("contribution.jpg")
+```
+
+```{r}
+nhl = nhl %>% 
+  group_by(Team) %>% 
+  mutate(teamG = sum(G),
+         A = A1 + A2,
+         teamA = sum(A)) %>% 
+  mutate(gcont = (G/teamG)*100,
+         acont = (A/teamA)*100)
+
+nhl %>% 
+  select(player, gcont,acont) %>% 
+  arrange(desc(acont))
+
+desc_dry = "Draisaitl leads in goal contribution"
+
+nhl %>% 
+  ggplot(aes(acont,gcont)) + 
+  geom_point(data = nhl %>%
+                    filter(gcont < 20 | acont < 15),
+             color = "grey20", size = 3, alpha = 0.2) +
+  geom_point(data = nhl %>%
+                    filter(gcont > 20 | acont > 15),
+             color = "red", size = 4) +
+  theme_fivethirtyeight() +
+  geom_hline(yintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_vline(xintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_text_repel(data = nhl %>%
+                    filter(gcont > 20 | acont > 15,),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 3, 
+                  min.segment.length = 0, segment.color = "red",
+                  point.padding = 0.5) +
+  labs(title = "Goal Contribution Matrix: NHL (2018-2019 Season)", subtitle = "Team Goal Involvement as Percentage of Total Team Goals/Assists", x="Percentage of Team Goals Assisted", y = "Percentage of Team Goals Scored")
+
+ggsave("contributions2.png")
+```
+
+```{r}
+```{r}
+nhl = nhl %>% 
+  group_by(Team) %>% 
+  mutate(teamG = sum(G),
+         A = A1 + A2,
+         teamA = sum(A)) %>% 
+  mutate(gcont = (G/teamG)*100,
+         acont = (A/teamA)*100)
+
+desc_dry = "Draisaitl leads in goal contribution"
+
+nhl %>% 
+  ggplot(aes(acont,gcont)) + 
+  geom_point(data = nhl %>%
+                    filter(gcont < 20 | acont < 15),
+             color = "grey20", size = 3, alpha = 0.2) +
+  geom_point(data = nhl %>%
+                    filter(gcont > 20 | acont > 15),
+             color = "red", size = 4) +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto Condensed"),
+        title = element_text(size = 18),
+        plot.subtitle = element_text(size = 16),
+        plot.caption = element_text(size = 10),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12)) + 
+  geom_hline(yintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_vline(xintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_text_repel(data = nhl %>%
+                    filter(gcont > 20 | acont > 15,),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 3, 
+                  min.segment.length = 0, segment.color = "red",
+                  point.padding = 0.5) +
+  labs(title = "Goal Contribution Matrix: NHL (2018-2019 Season)", subtitle = "Team Goal Involvement as Percentage of Total Team Goals/Assists", x="Percentage of Team Goals Assisted", y = "Percentage of Team Goals Scored")
+
+ggsave("contribution.jpg")
+```
+
+```{r}
+nhl = nhl %>% 
+  group_by(Team) %>% 
+  mutate(teamG = sum(G),
+         A = A1 + A2,
+         teamA = sum(A)) %>% 
+  mutate(gcont = (G/teamG)*100,
+         acont = (A/teamA)*100)
+
+nhl %>% 
+  ggplot(aes(acont,gcont)) + 
+  geom_jitter(data = nhl,
+             color = "grey20", size = 3, alpha = 0.2) +
+  geom_jitter(data = nhl %>%
+                    filter(Team == "TOR"),
+             color = "#00205B", size = 4, alpha = 0.6) +
+  theme_fivethirtyeight() +
+  geom_hline(yintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_vline(xintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_text_repel(data = nhl %>%
+                    filter(Team == "TOR" & (gcont>7 | acont>7)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 3, 
+                  min.segment.length = 0, segment.color = "red",
+                  point.padding = 0.5) +
+  labs(title = "Goal Contribution Matrix: Leafs", subtitle = "Team Goal Involvement as Percentage of Total Team Goals/Assists", x="Percentage of Team Goals Assisted", y = "Percentage of Team Goals Scored")
+
+ggsave("contributions3.png")
+```
+
+```{r}
+nhl = nhl %>% 
+  group_by(Team) %>% 
+  mutate(teamG = sum(G),
+         A = A1 + A2,
+         teamA = sum(A)) %>% 
+  mutate(gcont = (G/teamG)*100,
+         acont = (A/teamA)*100)
+
+nhl %>% 
+  ggplot(aes(acont,gcont)) + 
+  geom_jitter(data = nhl,
+             color = "grey20", size = 3, alpha = 0.2) +
+  geom_jitter(data = nhl %>%
+                    filter(Team == "EDM"),
+             color = "#FF4C00", size = 4, alpha = 0.6) +
+  theme_fivethirtyeight() +
+  geom_hline(yintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_vline(xintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_text_repel(data = nhl %>%
+                    filter(Team == "EDM" & (gcont>7 | acont>7)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 3, 
+                  min.segment.length = 0, segment.color = "red",
+                  point.padding = 0.5) +
+  labs(title = "Goal Contribution Matrix: Oilers", subtitle = "Team Goal Involvement as Percentage of Total Team Goals/Assists", x="Percentage of Team Goals Assisted", y = "Percentage of Team Goals Scored")
+
+ggsave("contributions4.png")
+```
+
+```{r}
+atlantic = nhl %>% 
+  filter(Team == "T.B" | Team =="TOR" | Team == "FLA" | Team == "MTL" | Team == "DET" | Team == "BUF"| Team == "BOS" | Team == "OTT") %>% 
+  group_by(Team) %>% 
+  mutate(teamG = sum(G),
+         A = A1 + A2,
+         teamA = sum(A)) %>% 
+  mutate(gcont = (G/teamG)*100,
+         acont = (A/teamA)*100)
+
+atlantic2 = atlantic %>% 
+  mutate(player = gsub("^.*\\.","", player))
+
+atlantic2 %>% 
+  ggplot(aes(acont,gcont)) + 
+  geom_point(data = atlantic2,
+             color = "grey20", size = 2, alpha = 0.2) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "TOR" & (gcont>10 | acont>10)),
+             color = "#00205B", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "TOR" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "BOS" & (gcont>10 | acont>10)),
+             color = "#FFB81C", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "BOS" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "BUF" & (gcont>10 | acont>10)),
+             color = "#002654", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "BUF" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "DET" & (gcont>10 | acont>10)),
+             color = "#CE1126", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "DET" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "FLA" & (gcont>10 | acont>10)),
+             color = "#B9975B", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "FLA" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "MTL" & (gcont>10 | acont>10)),
+             color = "#AF1E2D", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "MTL" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "OTT" & (gcont>10 | acont>10)),
+             color = "#C52032", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "OTT" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  geom_point(data = atlantic2 %>%
+                    filter(Team == "T.B" & (gcont>10 | acont>10)),
+             color = "#002868", size = 2.5, alpha = 0.6) +
+  geom_text_repel(data = atlantic2 %>%
+                    filter(Team == "T.B" & (gcont>10 | acont>10)),
+                  aes(label = player, family = "Roboto Condensed", fontface = "bold"), 
+                  seed = 15, size = 1.5, 
+                  
+                  point.padding = 0.05) +
+  theme_fivethirtyeight() +
+  geom_hline(yintercept = 10, color = "grey20", alpha = 0.4) +
+  geom_vline(xintercept = 10, color = "grey20", alpha = 0.4) +
+  labs(title = "Goal Contribution Matrix: Atlantic", subtitle = "Team Goal Involvement as Percentage of Total Team Goals/Assists", x="Percentage of Team Goals Assisted", y = "Percentage of Team Goals Scored") +
+  facet_wrap(~Team) +
+  expand_limits(x=20,y=20) +
+  theme(axis.text=element_text(size=8)) +
+  + theme(axis.title.x = element_text(color="blue", size=14, face="bold"))
+
+ggsave("contributions5.png")
+```
+

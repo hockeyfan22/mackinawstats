@@ -1,0 +1,88 @@
+---
+title: "The Athletic Tracking"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(tidytext)
+library(tidyverse)
+```
+
+```{r}
+#Specifying the url for desired website to be scraped
+url <- 'https://theathletic.com/1307195/2019/10/20/the-leafs-should-explore-the-mitch-marner-auston-matthews-partnership-more-often/'
+
+url %>% 
+  read_html(url) %>% 
+  html_nodes('.article-content-container') %>% 
+  html_text() %>% 
+  as.tibble() %>% 
+  unnest_tokens(word, value, token = "ngrams", n =2)
+```
+```{r}
+get_text = function(url) {
+  url %>% 
+  read_html(url) %>% 
+  html_nodes('.article-content-container') %>% 
+  html_text() %>% 
+  as.tibble() %>% 
+  unnest_tokens(word, value, token = "ngrams", n =2)
+}
+```
+
+```{r}
+urls = c('https://theathletic.com/1261844/2019/10/02/hes-a-great-leader-john-tavares-is-the-new-captain-of-the-toronto-maple-leafs/', 'https://theathletic.com/1262817/2019/10/02/lebrun-why-emotions-of-the-jason-spezza-scratch-shouldnt-linger-for-maple-leafs/', 'https://theathletic.com/1262775/2019/10/02/doug-gilmour-my-advice-to-john-tavares-on-how-to-be-captain-of-the-maple-leafs/', 'https://theathletic.com/1262823/2019/10/02/leafs-report-cards-auston-matthews-just-misses-a-hat-trick-ilya-mikheyev-continues-to-impress-in-season-opener/', 'https://theathletic.com/1263463/2019/10/03/mirtle-2019-20-starts-with-a-new-captain-new-faces-a-new-style-of-play-and-more-soup-for-the-maple-leafs/', 'https://theathletic.com/1262492/2019/10/03/not-becoming-captain-of-the-maple-leafs-shouldnt-change-much-for-auston-matthews/', 'https://theathletic.com/1264619/2019/10/03/bourne-from-tavares-creating-space-to-matthews-calming-the-puck-how-little-plays-lead-to-big-moments/', 'https://theathletic.com/1263259/2019/10/04/dgb-grab-bag-breaking-down-another-wild-nbc-portrait-hashtags-thoughts-and-dave-tippetts-tool-problems/', 'https://theathletic.com/1265070/2019/10/04/what-exactly-is-mike-babcock-trying-to-do-by-sitting-jason-spezza/', 'https://theathletic.com/1265919/2019/10/04/ten-bold-and-not-so-bold-predictions-for-the-toronto-marlies-season/', 'https://theathletic.com/1269051/2019/10/04/leafs-report-cards-mitch-marner-magic-power-play-dominance-help-toronto-edge-out-columbus/', 'https://theathletic.com/1268945/2019/10/05/training-camp-is-over-but-mike-babcock-is-still-auditioning-roles-with-the-leafs/', 'https://theathletic.com/1267754/2019/10/05/why-the-debate-over-jason-spezzas-role-matters-especially-at-5-on-5/', 'https://theathletic.com/1269932/2019/10/05/adapt-or-die-why-the-marlies-despite-historic-success-are-changing-things-up/', 'https://theathletic.com/1270072/2019/10/06/leafs-report-cards-kasperi-kapanen-blows-it-in-third-period-collapse-against-montreal/', 'https://theathletic.com/1270477/2019/10/06/mirtle-drawing-some-ridiculously-early-conclusions-about-the-2019-20-maple-leafs/', 'https://theathletic.com/1258844/2019/10/07/monday-morning-leafs-report-mr-ovo-stealth-nylander-and-tyson-barrie-loving-life-in-muzzin-world/', 'https://theathletic.com/1268002/2019/10/07/book-excerpt-nick-robertson-started-life-too-early-and-hes-not-going-to-slow-down-now/', 'https://theathletic.com/1272609/2019/10/07/dgb-weekend-power-rankings-its-way-too-early-but-were-doing-this-anyway/',
+'https://theathletic.com/1275596/2019/10/07/leafs-report-cards-william-nylander-and-jake-muzzin-shine-frederik-andersen-comes-up-short-in-3-2-loss/', 'https://theathletic.com/1275436/2019/10/08/is-it-too-soon-for-the-leafs-to-bump-kasperi-kapanen-off-the-john-tavares-line/', 'https://theathletic.com/1255863/2019/10/09/never-ending-nightmare-former-nhl-star-don-edwards-three-decade-battle-for-justice-and-peace/', 'https://theathletic.com/1277142/2019/10/09/william-nylander-is-back-like-really-back-and-thats-a-big-deal-for-the-leafs/', 'https://theathletic.com/1280311/2019/10/10/a-life-changing-season-behind-the-turnaround-of-marlies-goaltender-kasimir-kaskisuo/', 'https://theathletic.com/1280794/2019/10/10/qa-trevor-moore-on-being-a-dog-dad-world-of-warcraft-mike-babcocks-plan-for-him/', 'https://theathletic.com/1280829/2019/10/10/bourne-one-observation-about-each-canadian-team-after-the-first-week-of-the-nhl-season/', 'https://theathletic.com/1283750/2019/10/10/who-will-be-the-first-nhl-coaching-casualty-of-2019-20/', 'https://theathletic.com/1284234/2019/10/10/lebrun-nikita-kucherov-knows-he-and-the-lightning-will-be-judged-by-playoff-success/', 'https://theathletic.com/1284051/2019/10/10/timothy-liljegren-wants-to-play-more-like-victor-hedman-so-what-would-be-hedmans-advice-to-liljegren/', 'https://theathletic.com/1285020/2019/10/10/leafs-report-cards-slow-starts-and-defensive-problems-continue-to-haunt-toronto-in-loss-to-lightning/', 'https://theathletic.com/1285422/2019/10/10/mirtle-one-brutal-loss-or-cause-for-larger-concern-reassessing-the-maple-leafs-after-a-tampa-bay-beatdown/', 'https://theathletic.com/1286889/2019/10/12/breaking-down-whats-really-behind-morgan-riellys-defensive-struggles/', 'https://theathletic.com/1288908/2019/10/12/leafs-report-cards-bottom-six-dominates-top-six-struggles-in-victory-over-detroit/', 'https://theathletic.com/1288644/2019/10/13/ilya-mikheyev-dmytro-timashov-and-the-importance-of-the-maple-leafs-newfound-depth/', 'https://theathletic.com/1275431/2019/10/14/monday-morning-leafs-report-missing-magic-between-john-tavares-and-mitch-marner-souperman-fourth-line-battle/', 'https://theathletic.com/1292740/2019/10/14/lebruns-observations-quality-coaching-sandins-demotion-and-penguins-shopping-d-man/', 'https://theathletic.com/1292548/2019/10/14/why-rasmus-sandin-was-sent-to-marlies-and-what-it-reinforces-about-the-maple-leafs-development-model/', 'https://theathletic.com/1293424/2019/10/15/down-goes-brown-the-ten-types-of-bad-starts-to-an-nhl-season-and-which-one-your-team-is-having/', 'https://theathletic.com/1296665/2019/10/15/leafs-report-cards-top-line-reinvigorated-by-trevor-moore-in-victory-over-minnesota/', 'https://theathletic.com/1297313/2019/10/16/mirtle-why-mike-babcocks-overdue-line-switcheroo-became-t-dogs-time-to-shine-with-tavares-marner/', 'https://theathletic.com/1298995/2019/10/16/how-rasmus-sandins-move-to-the-marlies-will-benefit-in-the-long-run/',
+'https://theathletic.com/1300671/2019/10/17/leafs-report-cards-second-period-struggles-cost-in-loss-to-washington/', 'https://theathletic.com/1299905/2019/10/17/the-maple-leafs-dont-have-an-easy-solution-if-michael-hutchinson-cant-do-the-backup-job/', 'https://theathletic.com/1299292/2019/10/17/500-games-later-a-look-back-at-the-tuukka-rask-trade-that-changed-the-bruins-and-maple-leafs/', 'https://theathletic.com/1302592/2019/10/17/john-tavares-is-out-until-november-what-do-the-maple-leafs-do-now/', 'https://theathletic.com/1300619/2019/10/18/dgb-grab-bag-coaches-on-the-hot-seat-when-refs-dont-suck-and-teenage-joe-sakic-rides-a-bicycle-with-one-leg/', 'https://theathletic.com/1304858/2019/10/18/alex-kerfoot-steps-into-the-spotlight-for-the-maple-leafs-with-john-tavares-out/', 'https://theathletic.com/1303453/2019/10/19/can-mitch-marner-really-drive-his-own-line-without-john-tavares/', 'https://theathletic.com/1305419/2019/10/19/get-to-know-the-goat-inside-frederik-gauthiers-world-of-baking-pies-james-blunt-and-puppy-love/', 'https://theathletic.com/1306981/2019/10/19/leafs-report-cards-mitch-marner-has-emphatic-bounce-back-game-frederik-andersen-puts-on-a-show-to-edge-bruins/', 'https://theathletic.com/1307195/2019/10/20/the-leafs-should-explore-the-mitch-marner-auston-matthews-partnership-more-often/', 'https://theathletic.com/1295063/2019/10/21/monday-morning-leafs-report-mike-babcocks-changing-tactics-with-auston-matthews-goats-growing-importance/')
+```
+
+```{r}
+test = map_df(urls, get_text)
+```
+```{r}
+
+names = c("auston matthews", "jason spezza", "john tavares", "mike babcock", "kasperi kapanen", "mitch marner")
+
+test %>% 
+  count(word, sort = TRUE) %>% 
+  filter(word %in% names)
+```
+```{r}
+get_text2 = function(url) {
+  url %>% 
+  read_html(url) %>% 
+  html_nodes('.article-content-container') %>% 
+  html_text() %>% 
+  as.tibble() %>% 
+  unnest_tokens(word, value)
+}
+```
+
+```{r}
+test2 = map_df(urls, get_text2)
+```
+
+```{r}
+names2 = c("matthews", "spezza", "tavares", "marner", "nylander", "babcock", "dubas", "johnsson", "kapanen","kerfoot", "mikheyev", "moore", "spezza", "petan", "gauthier","rielly", "ceci", "muzzin", "barrie", "sandin", "holl", "timashov", "shore", "dermott", "hyman", "andersen")
+
+test2 %>% 
+  count(word, sort = TRUE) %>% 
+  filter(word %in% names2) %>% 
+  mutate(word = stringr::str_to_title(word)) %>% 
+  mutate(word = fct_reorder(word,n)) %>% 
+  ggplot(aes(word,n)) +
+  geom_col(fill ="#00205B", alpha = 0.8) +
+  coord_flip() +
+  geom_text(aes(label = n), color = "white", hjust = 1.2) +
+  ggthemes::theme_fivethirtyeight() +
+  labs(title = "Leafs Player Mentions in The Athletic", subtitle = "Content from The Athletic Leafs stories from 10/2 to present.", caption = "Chart by @MackinawStats", x="") +
+  theme(axis.title = element_text()) + ylab("Mentions")
+
+ggsave("mentions.png")
+```
+

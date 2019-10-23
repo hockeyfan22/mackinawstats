@@ -1,0 +1,63 @@
+---
+title: "leafsgoogletrends"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+library(trendyy)
+library(lubridate)
+library(extrafont)
+library(showtext)
+library(awtools)
+```
+
+```{r}
+players <- c("William Nylander", "Mitch Marner", "Auston Matthews", "John Tavares")
+
+player_trends <- trendy(players, from = "2019-09-01", to = Sys.Date())
+```
+
+```{r}
+import_plex_sans()
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+```
+
+
+```{r}
+player_trends %>% 
+  get_interest() %>% 
+  mutate(date = floor_date(date)) %>% 
+  ggplot(aes(date, hits, color = keyword)) +
+  geom_line(size = 1.5) +
+  a_plex_theme() +
+  labs(title = "Google Searches", subtitle = "Leafs Stars, 9/1/2019 to present", caption = "Chart by @MackinawStats", x = "", y = "Hits (Relative to Peak Popularity)") +
+  theme(legend.position = "top")
+
+ggsave("updatedtrends.pdf")
+```
+

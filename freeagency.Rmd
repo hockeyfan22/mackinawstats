@@ -1,0 +1,433 @@
+---
+title: "freeagents"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+
+nhl = read_csv("freeagency.csv") 
+```
+```{r}
+nb.cols <- 42
+mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+
+nhl %>% 
+  group_by(TEAM) %>% 
+  mutate(salary = sum(`CAP HIT`)) %>% 
+  ungroup() %>% 
+  mutate(Team = fct_reorder(TEAM, `CAP HIT`, sum, .desc = FALSE)) %>%
+  mutate(cap = as.character(`CAP HIT`)) %>% 
+  ggplot(aes(Team, salary, fill = cap)) +
+  geom_histogram(stat = "identity") +
+  coord_flip() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Florida is shelling out the cash", subtitle = "Free agent signings from July 1st to July 4th") +
+  geom_text(aes(label = salary))
+
+ggsave("freeagency2.png")
+```
+```{r}
+nb.cols <- 42
+mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+
+nhl %>% 
+  group_by(TEAM) %>% 
+  mutate(salary = sum(`CAP HIT`)) %>% 
+  mutate(indicator = as.character(`CAP HIT`)) %>% 
+  ungroup() %>% 
+  mutate(TEAM = fct_reorder(TEAM, `CAP HIT`, sum, .desc = FALSE)) %>%
+  ggplot(aes(TEAM, 'CAP HIT' ,fill = indicator, group = TEAM)) +
+  geom_col() +
+  coord_flip() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = mycolors) +
+  labs(title = "Florida is shelling out the cash", subtitle = "Free agent signings from July 1st to July 4th") 
+
+```
+```{r}
+nb.cols <- 42
+mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+
+nhl %>% 
+  mutate(Team = fct_reorder(TEAM, `CAP HIT`, sum, .desc = FALSE)) %>%
+  mutate(cap = as.character(`CAP HIT`)) %>% 
+  ggplot(aes(Team, `CAP HIT`, fill = cap)) +
+  geom_col() +
+  coord_flip() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Florida is shelling out the cash", subtitle = "Free agent signings from July 1st to July 4th")
+
+ggsave("freeagencyfinal.png")
+```
+```{r}
+library(ggchicklet)
+nb.cols <- 65
+mycolors <- colorRampPalette(rev(brewer.pal(8, "Blues")))(nb.cols)
+
+nhl %>% 
+  mutate(Team = fct_reorder(TEAM, `CAP HIT`, sum, .desc = FALSE)) %>%
+  mutate(cap = as.character(`CAP HIT`)) %>% 
+  ggplot(aes(Team, `CAP HIT`, fill = cap)) +
+  geom_col() +
+  coord_flip() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Florida is shelling out the cash", subtitle = "Free agent signings from July 1st to July 17th")
+
+ggsave("freeagency79.png")
+
+nhl %>% 
+  mutate(Team = fct_reorder(TEAM, `CAP HIT`, sum, .desc = FALSE)) %>%
+  mutate(cap = as.character(`CAP HIT`)) %>% 
+  group_by(Team) %>% 
+  summarize(total = sum(`CAP HIT`)) %>% 
+  arrange(desc(total)) %>% 
+  summarize(mean = mean(total))
+
+```
+```{r}
+plot = nhl %>% 
+  filter(TYPE != "Entry-Level") %>% 
+  filter(`CAP HIT`<1500000) %>% 
+  count(TEAM) %>% 
+  arrange(desc(n)) %>% 
+  head(15) %>% 
+  mutate(TEAM = fct_reorder(TEAM,n)) %>% 
+  mutate(color = ifelse(TEAM == "TOR", "yes", "no"))
+
+plot %>% 
+  ggplot(aes(TEAM, n, fill = color)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c( "yes"="#00205B", "no"="gray" ), guide = FALSE) +
+  geom_text(data = plot %>% filter(TEAM != "TOR"),aes(label = n), nudge_y = 0.2) +
+  geom_text(data = plot %>% filter(TEAM == "TOR"),aes(label = n), nudge_y = 0.2, color = "#00205B", size = 6) +
+  theme_ipsum_rc(grid = "X") +
+  labs(title = "Number of signings below $1.5M", subtitle = "Top 15 teams, From July 1-26, ELCs excluded", x="" ,y="", caption = "Chart by @MackinawStats") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+   theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+ggsave("signingsbar.png")
+```
+
+```{r}
+plot2 = nhl %>%
+  mutate(DATE = as.Date(DATE, "%m/%d/%Y")) %>% 
+  mutate(Date = week(DATE)) %>% 
+  mutate(week = case_when(Date == "26" | Date == "27" ~ "Week 1",
+                          Date == "28" ~ "Week 2",
+                          Date == "29" ~ "Week 3",
+                          Date == "30" ~ "Week 4")) %>% 
+   mutate(`CAP HIT` = `CAP HIT`/1000000)
+
+plot2 %>% 
+  ggplot(aes(week, `CAP HIT`)) +
+  geom_quasirandom(data = plot2 %>% filter(TEAM != "TOR"), color = "grey", alpha = 0.9) +
+  geom_quasirandom(data = plot2 %>% filter(TEAM == "TOR"), color = "#00205B", size = 3, alpha = 0.6) +
+  scale_y_continuous(labels = scales::dollar) +
+  theme_ipsum_rc() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(title = "Leafs signings during Free Agency", subtitle = "Includes all signings", y = "Cap Hit ($M)", x = "Free Agency Week") +
+  geom_hline(yintercept = c(3,6,9,12), alpha = 0.2, color = "grey") +
+  scale_y_continuous(breaks = c(3,6,9,12), labels = scales::dollar)
+
+ggsave("leafsweeklysignings.png")
+
+```
+```{r}
+nhl %>% 
+  filter(TYPE != "Entry-Level") %>% 
+  mutate(under = ifelse(`CAP HIT`<1500000,1,0)) %>% 
+  group_by(TEAM) %>% 
+  summarize(totalmoves = n(),
+            undermoves = sum(under)) %>% 
+  mutate(propunder = undermoves/totalmoves) %>% 
+  arrange(desc(propunder))
+  
+```
+```{r}
+additions = read_csv("leafsadditions.csv")
+totaladd = read_csv("totaladd.csv")
+```
+```{r}
+mean = additions %>% 
+  summarize(mean = mean(Points_60))
+
+additions %>% 
+  filter(player == "PONTUS.ABERG" | player == "KALLE.KOSSILA" | player == "GARRETT.WILSON" | player == "KENNY.AGOSTINO" | player == "JASON.SPEZZA" | player == "NICK.SHORE") %>% 
+  group_by()
+```
+```{r}
+totaladd %>% 
+  filter(player == "PONTUS.ABERG" | player == "KALLE.KOSSILA" | player == "GARRETT.WILSON" | player == "KENNY.AGOSTINO" | player == "JASON.SPEZZA" | player == "NICK.SHORE") %>% 
+  group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            Points = sum(Points)) %>% 
+  mutate(p60 = TOI/60) %>% 
+  mutate(Points_60 = Points/p60) %>% 
+  mutate(player = fct_reorder(player, Points_60)) %>% 
+  ggplot(aes(Points_60, player)) +
+  geom_segment(aes(y = player, yend = player,
+                   x = 1.40, xend = Points_60), size = 2, color = "#00205B") +
+  geom_point(size = 4, color = "#00205B") +
+  geom_vline(xintercept = 1.40) +
+  xlim(0.5,1.5) +
+  theme_ipsum_rc() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(title = "Leafs Additions", subtitle = "Comparison to the league average in Points Per 60", y ="", x="Points Per 60")
+
+ggsave("leafsadditionspoints.png")
+```
+```{r}
+totaladd %>% 
+  filter(position == "F") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GP = sum(GP),
+            Points = sum(Points)) %>% 
+  mutate(rank = rank(-Points)) %>% 
+  filter(GP>20) %>% 
+  filter(rank>90) %>% 
+  mutate(p60 = TOI/60) %>% 
+  mutate(Points_60 = Points/p60) %>% 
+  summarize(mean = mean(Points_60))
+
+totaladd %>% 
+  filter(position == "F") %>% 
+   mutate(p60 = TOI/60) %>% 
+  mutate(Points_60 = Points/p60) %>% 
+  summarize(mean = mean(Points_60))
+```
+
+```{r}
+totaladd %>% 
+  filter(Team == "TOR") %>% 
+  filter(position == "F") %>% 
+  filter(player != "AUSTON.MATTHEWS" & player != "JOHN.TAVARES" & player != "KASPERI.KAPANEN" & player != "MITCH.MARNER" & player != "NAZEM.KADRI" & player != "PATRICK.MARLEAU" & player != "WILLIAM.NYLANDER" & player != "ZACH.HYMAN" & player != "ANDREAS.JOHNSSON" & player != "CONNOR.BROWN") %>% 
+  mutate(p60 = TOI/60) %>% 
+  mutate(Points_60 = Points/p60) %>% 
+  summarize(mean = mean(Points_60))
+```
+```{r}
+rapm = read_csv("rapmrates.csv")
+
+normalize <- function(x) {
+  x <- (x - mean(x))/sd(x)
+}
+
+
+rapm %>% 
+  filter(position == "F") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  filter(player == "PONTUS.ABERG" | player == "KALLE.KOSSILA" | player == "GARRETT.WILSON" | player == "KENNY.AGOSTINO" | player == "JASON.SPEZZA" | player == "NICK.SHORE") %>% 
+  select(-TOI) %>% 
+  melt() %>%
+  ggplot(aes(value,variable)) +
+  geom_point() +
+  facet_wrap(~player) +
+  geom_segment(aes(y = variable, yend = variable,
+                   x = 0, xend = value), size = 1.5, color = "#00205B") +
+  geom_point(size = 3, color = "#00205B") +
+  geom_vline(xintercept = 0) +
+  theme_ipsum_rc() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(title = "RAPM rates among select forwards", subtitle = "Standard Deviation from the Mean, from Evolving Hockey", y = "", x = "Standard Deviation") +
+  scale_x_continuous(breaks = c(-1,0,1), labels = c("-1","0","1"))
+
+ggsave("rapmchart.png")
+```
+```{r}
+rapm %>% 
+  filter(position == "F") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  filter(player == "KEVIN.SHATTENKIRK") %>% 
+  select(-TOI) %>% 
+  melt() %>%
+  ggplot(aes(value,variable)) +
+  geom_point() +
+  geom_segment(aes(y = variable, yend = variable,
+                   x = 0, xend = value), size = 1.5, color = "#00205B") +
+  geom_point(size = 3, color = "#00205B") +
+  geom_vline(xintercept = 0) +
+  theme_ipsum_rc() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(title = "RAPM rates among select forwards", subtitle = "Standard Deviation from the Mean, from Evolving Hockey", y = "", x = "Standard Deviation") +
+  scale_x_continuous(breaks = c(-1,0,1), labels = c("-1","0","1"))
+
+ggsave("rapmchart2.png")
+```
+```{r}
+rapm %>% 
+  filter(position == "F") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  filter(player == "AUSTON.MATTHEWS") %>% 
+  select(-TOI) %>% 
+  melt() %>%
+  ggplot(aes(x=variable, y=value)) +
+  geom_col(fill = "red", alpha=1, width=1)+
+  geom_hline(yintercept = seq(-3, 3, by = 1),
+             color = "grey", size = 1) +
+  geom_vline(xintercept = seq(-3, 3, by = 1),
+             color = "grey", size = 1) +
+  coord_polar()
+```
+```{r}
+rapm %>% 
+  filter(position == "D") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  reshape2::melt() %>% 
+  filter(variable != "TOI") %>% 
+  mutate(color = case_when(player == "JAKE.GARDINER" ~ "blue",
+                           TRUE ~ "none")) %>% 
+  mutate(size = case_when(player == "JAKE.GARDINER" ~ 2,
+                           TRUE ~ 1)) %>% 
+  ggplot(aes(x= value, y =1, color = color, size = size)) +
+  scale_size(range = c(1, 2)) +
+  geom_vline(xintercept = 0, color = "grey") +
+  geom_quasirandom(groupOnX = FALSE, alpha = 0.4) +
+  scale_colour_manual(values = c("blue", "grey")) +
+  facet_wrap(~variable) +
+  theme_ipsum(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "The Leafs Will Miss Jake Gardiner", subtitle = "Standardized Evolving Wild RAPM Rates" , x = "Standard Deviation", y= "") +
+  theme(axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+ggsave("gardinerrapm.png")
+```
+```{r}
+rapm %>% 
+  filter(position == "F") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  reshape2::melt() %>% 
+  filter(variable != "TOI") %>% 
+  mutate(color = case_when(player == "JASON.SPEZZA" ~ "blue",
+                           player == "FREDERIK.GAUTHIER" ~ "red",
+                           TRUE ~ "none")) %>% 
+  mutate(size = case_when(player == "JASON.SPEZZA" ~ 1,
+                          player == "FREDERIK.GAUTHIER" ~ 1,
+                           TRUE ~ 0.2)) %>% 
+  ggplot(aes(x= value, y =1, color = color, size = size)) +
+  scale_size(range = c(1, 2)) +
+  geom_vline(xintercept = 0, color = "grey") +
+  geom_quasirandom(groupOnX = FALSE, aes(alpha = size)) +
+  scale_colour_manual(values = c("blue", "grey", "red")) +
+  facet_wrap(~variable) +
+  theme_ipsum(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "The Leafs Will Miss Jake Gardiner", subtitle = "Standardized Evolving Wild RAPM Rates" , x = "Standard Deviation", y= "") +
+  theme(axis.title.y = element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+
+```
+
+
+
+
+

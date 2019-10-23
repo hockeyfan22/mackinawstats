@@ -1,0 +1,76 @@
+---
+title: "salarymerge"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+
+salary = read_csv("salaries7.18.csv") %>% 
+  mutate(player = stringi::stri_trans_general(player, 'latin-ascii'))
+```
+
+```{r}
+#MERGING SALARY DATA WITH POINT PRODUCTION
+
+points = read_csv("skatertotals.csv") %>% 
+  filter(season == "20182019")
+
+gar = read_csv("GAR.csv") %>% 
+  filter(season == "20182019")
+
+points60 = read_csv("allstatsrates.csv")%>% 
+  filter(season == "20182019")
+
+library(fuzzyjoin)
+
+update = stringdist_inner_join(salary, points, ignore_case = TRUE)
+updateGAR = stringdist_inner_join(salary, gar, ignore_case = TRUE)
+update60 = stringdist_inner_join(salary, points60, ignore_case = TRUE)
+```
+
+```{r}
+update = update  %>% 
+  group_by(Tm) %>% 
+  filter(position == "F") %>% 
+  mutate(rank = rank(-Points)) %>% 
+  filter(rank<4) %>% 
+  mutate(toipergame = TOI/GP) %>% 
+  arrange(desc(toipergame))
+
+update %>% 
+  filter(Tm == "TOR")
+  
+
+update %>% 
+  ggplot(aes(toipergame, Points)) +
+  geom_point(data = update %>% filter(Tm != "TOR"), alpha= 0.2, size = 3) +
+  geom_point(data = update %>% filter(Tm == "TOR"), color = "blue", alpha= 0.7, size = 6) +
+  labs(title = "TOI per game vs. Points", subtitle = "Among Top 3 forwards by team, Data from Evolving Hockey", caption = "Chart by @MackinawStats") +
+  theme_fivethirtyeight() +
+  geom_vline(xintercept = 19, color = "blue", alpha = 0.5) +
+  theme(axis.title = element_text()) + xlab('TOI per game')
+
+ggsave("time.png")
+```
+

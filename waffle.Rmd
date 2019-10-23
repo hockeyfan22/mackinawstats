@@ -1,0 +1,201 @@
+---
+title: "waffle"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+
+points = read_csv("Evolving_Hockey_skater_stats_Standard_All_no_adj_2019-07-16.csv")
+```
+
+```{r}
+points %>% 
+  mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  filter(Points>60) %>% 
+  filter(season>2013) %>% 
+  count(season, position) %>% 
+  ggplot(aes(fill = position, values = n)) +
+  geom_waffle(color = "white", size = .25, n_rows = 6, flip = TRUE) +
+  facet_wrap(~season, nrow = 1, strip.position = "bottom") +
+   scale_x_discrete() + 
+  scale_y_continuous(labels = function(x) x * 6, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+  ggthemes::scale_fill_tableau(name=NULL) +
+  coord_equal() +
+  labs(
+    title = "Players with over 60 points",
+    subtitle = "Data from EvolvingHockey",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal(base_family = "Roboto Condensed") +
+  theme(panel.grid = element_blank(), axis.ticks.y = element_line()) +
+  guides(fill = guide_legend(reverse = TRUE))
+
+ggsave("waffle.png")
+
+points %>% 
+  mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  filter(Points>60) %>% 
+  filter(season>2013) %>% 
+  count(season) 
+```
+```{r}
+points %>% 
+  mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  filter(Points>60) %>% 
+  filter(season>2013) %>% 
+  count(season, Team) %>% 
+  ggplot(aes(fill = Team, values = n)) +
+  geom_waffle(color = "white", size = .25, n_rows = 10, flip = TRUE) +
+  facet_wrap(~season, nrow = 1, strip.position = "bottom") +
+   scale_x_discrete() + 
+  scale_y_continuous(labels = function(x) x * 10, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+  ggthemes::scale_fill_tableau(name=NULL) +
+  coord_equal() +
+  labs(
+    title = "Players with over 60 points",
+    subtitle = "Data from EvolvingHockey",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal(base_family = "Roboto Condensed") +
+  theme(panel.grid = element_blank(), axis.ticks.y = element_line()) +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+```{r}
+points %>% 
+  mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  group_by(season) %>% 
+  mutate(rank = rank(-Points)) %>% 
+  filter(rank<100) %>% 
+  count(season, Team) %>% 
+  mutate(TOR = ifelse(Team == "TOR", "TOR", "NO")) %>% 
+  ggplot(aes(fill = TOR, values = n)) +
+  geom_waffle(color = "#ffffff", size = .25, n_rows = 10, flip = TRUE) +
+  scale_fill_manual(values = c("#f59cbf","#00daff")) +
+  facet_wrap(~season, nrow = 2, strip.position = "bottom") +
+  theme_enhance_waffle() +
+   scale_x_discrete() + 
+  scale_y_continuous(labels = function(x) x * 10, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+  coord_equal() +
+  labs(
+    title = "Players with over 60 points",
+    subtitle = "Data from EvolvingHockey",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal(base_family = "Roboto Condensed") +
+  theme(panel.grid = element_blank(), axis.ticks.y = element_line()) +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+```{r}
+points %>% 
+  mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  group_by(position, season) %>% 
+  summarize(Points = sum(Points)) %>% 
+  ggplot(aes(fill = position, values = Points)) +
+  geom_waffle(color = "#ffffff", size = .25, n_rows = 10, flip = TRUE) +
+  scale_fill_manual(values = c("#f59cbf","#00daff")) +
+  facet_wrap(~season, nrow = 10, strip.position = "bottom") +
+  theme_enhance_waffle() +
+   scale_x_discrete() + 
+  scale_y_continuous(labels = function(x) x * 10, # make this multiplyer the same as n_rows
+                     expand = c(0,0)) +
+  coord_equal() +
+  labs(
+    title = "Players with over 60 points",
+    subtitle = "Data from EvolvingHockey",
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal(base_family = "Roboto Condensed") +
+  theme(panel.grid = element_blank(), axis.ticks.y = element_line()) +
+  guides(fill = guide_legend(reverse = TRUE))
+  
+```
+
+

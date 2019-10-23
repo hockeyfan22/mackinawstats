@@ -1,0 +1,164 @@
+---
+title: "salaries"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(ggridges)
+
+salaries = read_csv("salaries7.18.csv") %>% 
+  mutate(player = gsub("\\\\.*","",player))
+```
+```{r}
+salaries %>% 
+  mutate(`Cap Hit` = `Cap Hit`/1000000) %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  mutate(Tm = fct_reorder(Tm, `Cap Hit`, .fun = median)) %>% 
+  ggplot(aes(`Cap Hit`, Tm)) +
+  geom_density_ridges(rel_min_height = 0.01, scale = 1, aes(point_color = Tm, point_fill = Tm),
+    alpha = .2, point_alpha = 1, jittered_points = TRUE, point_size = 2) +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Salary Distributions in the Atlantic Division", subtitle = "Data from HockeyReference", caption = "chart by @MackinawStats") +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none")
+```
+
+```{r}
+salaries %>% 
+  mutate(`Cap Hit` = `Cap Hit`/1000000) %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  mutate(Tm = fct_reorder(Tm, `Cap Hit`, .fun = mean)) %>% 
+  ggplot(aes(`Cap Hit`, Tm)) +
+  geom_density_ridges(rel_min_height = 0.01, scale = 1, aes(point_color = Tm, point_fill = Tm),
+    alpha = .2, point_alpha = 1, jittered_points = TRUE, point_size = 2) +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Salary Distributions in the Atlantic Division", subtitle = "Data from HockeyReference", caption = "chart by @MackinawStats", x = "Cap Hit ($M)", y = "") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+ggsave("atlanticdist.png")
+```
+```{r}
+static = salaries %>% 
+  mutate(`Cap Hit` = `Cap Hit`/1000000) %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  mutate(Tm = fct_reorder(Tm, `Cap Hit`, .fun = median)) %>% 
+  ggplot(aes(`Cap Hit`, Tm)) +
+  geom_density_ridges(rel_min_height = 0.01, scale = 1, aes(point_color = Tm, point_fill = Tm),
+    alpha = .2, point_alpha = 1, jittered_points = TRUE, point_size = 2) +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Salary Distributions in the Atlantic Division", subtitle = "Data from HockeyReference", caption = "chart by @MackinawStats", x = "Cap Hit ($M)", y = "") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+interactive = ggplotly(static)
+```
+
+
+```{r}
+Sys.setenv("plotly_username"="hockeyfan22")
+Sys.setenv("plotly_api_key"="CKaWwTlA8AVuyIY9A8P8")
+```
+
+
+```{r}
+salaries %>%
+  ungroup() %>% 
+  mutate(`Cap Hit` = `Cap Hit`/1000000) %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  ggplot(aes(Tm, `Cap Hit`, text = player)) +
+  geom_quasirandom(size = 3, alpha = 0.8, aes(color = `Cap Hit`), width = 0.2) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Salary Distributions in the Atlantic Division", subtitle = "Data from HockeyReference", caption = "chart by @MackinawStats", x = "Cap Hit ($M)", y = "") +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_color_gradient_tableau()
+```
+
+
+
+```{r}
+interactive = salaries %>%
+  ungroup() %>% 
+  mutate(`Cap Hit` = round(`Cap Hit`/1000000,2)) %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  ggplot(aes(Tm, `Cap Hit`, text = player)) +
+  geom_quasirandom(size = 3, alpha = 0.8, aes(color = `Cap Hit`), width = 0.2) +
+  scale_y_continuous(labels = scales::dollar) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_color_gradient_tableau() +
+  theme(axis.title = element_text()) + ylab('Cap Hit, $M') +
+  labs(title = "Salary Distributions in the Atlantic Division", subtitle = "Data from HockeyReference", caption = "chart by @MackinawStats", x = "", y = "Cap Hit ($M)") 
+
+interactive2 = ggplotly(interactive, tooltip = c("text","y"))
+interactive2
+
+saveWidget(interactive2,
+           "salarydist.html",     
+           libdir = "lib",
+           selfcontained = FALSE,
+           title = "Atlantic Salary Distribution")
+
+api_create(interactive2, filename = "atlantic")
+```
+```{r}
+interactive3 = salaries %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  arrange(desc(`Cap Hit`)) %>% 
+  head(10) %>% 
+   mutate(`Cap Hit` = round(`Cap Hit`/1000000,2)) %>% 
+  mutate(player = fct_reorder(player, `Cap Hit`)) %>% 
+  ggplot(aes(player, `Cap Hit`, fill = Tm)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_tableau() +
+  theme_cowplot() +
+  theme(legend.position = "none") +
+  geom_text(aes(label = `Cap Hit`), color = "white",  position = position_stack(vjust = 0.5), size = 5) +
+  labs(title = "Top Contracts in the Atlantic Division" , y = "Cap Hit ($M)", x = "")
+
+interactive4 = ggplotly(interactive3)
+interactive4
+
+api_create(interactive4, filename = "atlantic2")
+  
+```
+```{r}
+salaries %>%
+  ungroup() %>% 
+  mutate(`Cap Hit` = round(`Cap Hit`/1000000,2)) %>% 
+  filter(Tm == "TOR" | Tm == "BOS" | Tm == "DET" | Tm == "TBL" | Tm == "FLA" | Tm == "BUF" | Tm == "MTL" | Tm == "OTT") %>% 
+  ggplot(aes(Tm, `Cap Hit`, text = player)) +
+  geom_quasirandom(size = 3, alpha = 0.8, aes(color = `Cap Hit`), width = 0.2) +
+  scale_y_continuous(labels = scales::dollar) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  scale_color_gradient_tableau() +
+  theme(axis.title = element_text()) + ylab('Cap Hit, $M') +
+  labs(title = "Salary Distributions in the Atlantic Division", subtitle = "Data from HockeyReference", caption = "chart by @MackinawStats", x = "", y = "Cap Hit ($M)") 
+
+ggsave("disty.png")
+```
+

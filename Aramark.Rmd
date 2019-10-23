@@ -1,0 +1,39 @@
+---
+title: "Amark"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+library(haven)
+
+gpo = read_sav("US3003838.sav") 
+```
+```{r}
+gpo %>% 
+  gather(Q101:Q140, key = "metric", value = "value") %>% 
+  select(metric, value) %>% 
+  mutate()
+
+ 
+```
+

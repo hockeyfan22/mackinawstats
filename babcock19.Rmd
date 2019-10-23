@@ -1,0 +1,83 @@
+---
+title: "babcocksentiment2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(lubridate)
+library(zoo)
+library(ggforce)
+```
+
+```{r}
+babcock = read_csv("babcock19.csv") %>% 
+  mutate(date = mdy(date))
+```
+
+```{r}
+babcock %>%
+  unnest_tokens(word, text) %>% 
+  full_join(get_sentiments("bing")) %>% 
+  group_by(date,sentiment) %>% 
+  summarize(count = n()) %>% 
+  filter(!is.na(sentiment)) %>% 
+  spread(key = sentiment, value = count) %>% 
+  filter(!is.na(date)) %>% 
+  mutate(total = negative + positive) %>% 
+  mutate(positivitypercent = round(positive/total,2)) %>% 
+  ungroup() %>% 
+  mutate(mean = round(mean(positivitypercent),2)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, positivitypercent)) +
+  geom_hline(aes(yintercept = mean), alpha = 0.9, color = "black") +
+  geom_line(size = 2.5, color = "#ed713a") +
+  geom_point(fill = "white", size = 4, alpha = 0.9, height = 0.00, width = 0.1, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  scale_y_continuous(limits = c(0.6,1.0), labels = scales::percent) +
+  labs(title = "Babcock Post Game Sentiment", subtitle = "Sentiment Analysis of Post Game Transcripts", caption = "Chart by @MackinawStats", x = "Game", y = "Positive/Negative Share") +
+  theme(axis.title = element_text())
+```
+```{r}
+babcock %>%
+  unnest_tokens(word, text) %>% 
+  full_join(get_sentiments("bing")) %>% 
+  group_by(date,sentiment, seconds) %>% 
+  summarize(count = n()) %>% 
+  ungroup() %>% 
+  mutate(sentiment = case_when(is.na(sentiment) ~ "neutral", TRUE ~ sentiment)) %>% 
+  spread(sentiment, count) %>% 
+  filter(!is.na(date)) %>% 
+  mutate(total = negative + positive + neutral) %>% 
+  mutate(positivepercent = round(positive/total,4)) %>% 
+  mutate(mean = round(mean(positivepercent),2)) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(netsent = positive - negative) %>% 
+  mutate(minute = round(seconds/60,2)) %>% 
+  mutate(netpospermin = netsent/minute) %>% 
+  mutate(netposmean = mean(netpospermin)) %>% 
+  ggplot(aes(game, netpospermin)) +
+  geom_hline(aes(yintercept = netposmean), alpha = 0.6) +
+  geom_line(size = 2.5, color = "#ed713a") +
+  geom_point(fill = "white", size = 4, alpha = 0.9, height = 0.00, width = 0.1, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  scale_y_continuous(limits = c(5,15)) +
+  labs(title = "Mike Babcock Post Game Sentiment", subtitle = "Positive Words Per Minute From Post Game Transcripts", caption = "Chart by @MackinawStats", x = "Game", y = "Positive Words Per Minute") +
+  theme(axis.title = element_text())
+
+ggsave("sentpermin.pdf")
+ 
+```
+```{r}
+babcock %>% 
+  
+```
+
+
+
+

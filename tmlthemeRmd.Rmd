@@ -1,0 +1,76 @@
+---
+title: "TMLthemedesign"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(ggdark)
+```
+
+```{r}
+nhl = read_csv("skatertotals.csv") 
+  
+nhl = nhl %>% 
+mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  filter(Team == "TOR") %>% 
+  group_by(Team, season) %>% 
+  summarize(p = sum(Points))
+```
+
+
+```{r}
+themetml = dark_theme_grey() +
+  theme(panel.background = element_rect(fill = "#00205B",
+                                colour = "#00205B",
+                                size = 0.5, linetype = "solid")) +
+  theme(plot.background = element_rect(fill = "#00205B")) +
+  theme(axis.text = element_text(colour = "white"),
+        axis.text.x = element_text(colour = "white"),
+        axis.text.y = element_text(colour = "white")) +
+  theme(panel.grid.major = element_blank()) +
+  theme(panel.grid.minor = element_blank())
+```
+
+
+```{r}
+nhl %>% 
+  ggplot(aes(season,p)) +
+  geom_line(size = 1.5, color = "white") +
+  themetml +
+  labs(title = "Leafs", subtitle = "Leafs", caption = "Leafs", x= "Leafs", y = "Leafs") +
+  ylim(0,800)
+```
+

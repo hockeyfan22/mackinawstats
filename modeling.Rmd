@@ -1,0 +1,112 @@
+---
+title: "modleing"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(goalmodel)
+library(tidyverse)
+library(engsoccerdata)
+```
+
+```{r}
+england %>% 
+  filter(Season %in% c(2011),
+         tier==c(1)) %>% 
+  mutate(Date = as.Date(Date)) -> england_2011
+
+```
+```{r}
+gm_res_rs <- goalmodel(goals1 = england_2011$hgoal, goals2 = england_2011$vgoal,
+                     team1 = england_2011$home, team2=england_2011$visitor,
+                     rs=TRUE)
+
+summary(gm_res_rs)
+
+to_predict1 <- c('Arsenal', 'Manchester United', 'Bolton Wanderers')
+to_predict2 <- c('Fulham', 'Chelsea', 'Liverpool')
+
+predict_expg(gm_res_dc, team1=to_predict1, team2=to_predict2, return_df = TRUE)
+```
+```{r}
+nhl = read_csv("gamelogmodel.csv")
+```
+```{r}
+gm_res_rs <- goalmodel(goals1 = nhl$hgoal, goals2 = nhl$vgoal,
+                     team1 = nhl$home, team2=nhl$visitor,
+                     rs=TRUE)
+
+summary(gm_res_rs)
+```
+```{r}
+schedule = read_csv("schedule.csv")
+```
+```{r}
+predict_result(gm_res_rs, team1=schedule$Home, team2=schedule$Visitor, return_df = TRUE)
+```
+```{r}
+predict_result2 <- function(model_fit, team1, team2,
+                           x1=NULL, x2=NULL, return_df = FALSE){
+
+  stopifnot(length(team1) == length(team2),
+            all(team1 %in% model_fit$all_teams),
+            all(team2 %in% model_fit$all_teams))
+
+  ## Compute bivariate probability distribution of goals.
+  dgoals <- predict_goals(model_fit, team1 = team1, team2 = team2,
+                          x1 = x1, x2 = x2)
+
+  prob1 <- numeric(length(team1))
+  prob2 <- numeric(length(team1))
+
+  for (ii in 1:length(team1)){
+    prob1[ii] <- sum(dgoals[[ii]][lower.tri(dgoals[[ii]])])
+    prob2[ii] <- 1 - (prob1[ii])
+  }
+
+  if (return_df){
+    out <- data.frame(team1 = team1, team2 = team2,
+                      p1 = prob1, p2 = prob2,
+                      stringsAsFactors = FALSE)
+
+  } else {
+    out <- matrix(c(prob1, prob2), ncol=3, nrow=length(team1))
+  }
+
+  return(out)
+
+}
+```
+
+```{r}
+nhlpredictions = predict_result2(gm_res_rs, team1=schedule$Home, team2=schedule$Visitor, return_df = TRUE)
+```
+
+```{r}
+nhlpredictions %>% 
+  filter(team1 == "Toronto Maple Leafs" | team2 == "Toronto Maple Leafs") %>% 
+  mutate(game = as.numeric(row_number())) %>% 
+  select(game,team1,team2,p1,p2) %>% 
+  mutate(leafswinpercent = case_when(team1 == "Toronto Maple Leafs" ~ p1,
+                                     team2 == "Toronto Maple Leafs" ~ p2)) %>% 
+  mutate(leafslosepercent = (1- leafswinpercent)) %>% 
+  mutate(matchup = paste(team1,team2, sep = " vs. ")) %>%
+  mutate(matchup = paste(game,matchup, sep = " : ")) %>% 
+  filter(game<11) %>% 
+  select(game, matchup, leafswinpercent, leafslosepercent) %>% 
+  gather(leafswinpercent, leafslosepercent, key = "winloss", value = "value") %>% 
+  mutate(winloss = factor(winloss, levels = c("leafslosepercent","leafswinpercent"))) %>% 
+  mutate(matchup = fct_reorder(matchup, game, .desc = TRUE)) %>% 
+  ggplot(aes(matchup, value, fill = winloss)) +
+  geom_col(alpha = 0.8) +
+  coord_flip() +
+  ggthemes::theme_fivethirtyeight() +
+  scale_fill_manual(values = c("#A2AAAD", "#00205B")) +
+  scale_y_continuous(label = scales::percent) +
+  geom_text(aes(label = round(value,2)), position = position_stack(vjust = 0.5), color = "white") 
+```
+

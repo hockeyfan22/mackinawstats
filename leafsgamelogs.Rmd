@@ -1,0 +1,141 @@
+---
+title: "Leafsexp"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+leafs = read_csv("Evolving_Hockey_team_game_logs_2019-06-28_TOR_.csv") %>% 
+  mutate(dateopp = paste(game_date, Opponent))
+```
+
+```{r}
+leafs2 = leafs %>% 
+  mutate(game = row_number()) %>% 
+  mutate(gamebin = case_when(game<11 ~ "1-10",
+                             game>10 & game<21 ~ "11-20",
+                             game>20 & game<31 ~ "21-30",
+                             game>30 & game<41 ~ "31-40",
+                             game>40 & game<51 ~ "41-50",
+                             game>50 & game<61 ~ "51-60",
+                             game>60 & game<71 ~ "61-70",
+                             game>70 ~ "71-82")) %>% 
+  group_by(gamebin) %>% 
+  summarize(GF = mean(GF),
+            GA = mean(GA),
+            G_diff = mean(G_diff),
+            xGF = mean(xGF),
+            xGA = mean(xGA),
+            xG_diff = mean(xG_diff))
+```
+
+```{r}
+leafs2 %>% 
+  ggplot(aes(x = gamebin)) +
+  theme_fivethirtyeight() +
+  geom_line(aes(y=xGF), group = 1, color = "#00205B", size = 1.5) +
+  geom_line(aes(y=GF), group = 1, color = "#F47A38", size = 1.5) +
+  geom_point(aes(y=xGF), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#00205B") +
+  geom_point(aes(y=GF), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#F47A38") +
+  ylim(0,5)
+```
+```{r}
+leafs2 %>% 
+  ggplot(aes(x = gamebin)) +
+  theme_fivethirtyeight() +
+  geom_line(aes(y=xGA), group = 1, color = "#00205B", size = 1.5) +
+  geom_line(aes(y=GA), group = 1, color = "#F47A38", size = 1.5) +
+  geom_point(aes(y=xGA), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#00205B") +
+  geom_point(aes(y=GA), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#F47A38") +
+  ylim(0,5)
+```
+```{r}
+leafs2 %>% 
+  ggplot(aes(x = gamebin)) +
+  theme_fivethirtyeight() +
+  geom_line(aes(y=xG_diff), group = 1, color = "#00205B", size = 1.5) +
+  geom_line(aes(y=G_diff), group = 1, color = "#F47A38", size = 1.5) +
+  geom_point(aes(y=xG_diff), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#00205B") +
+  geom_point(aes(y=G_diff), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#F47A38") +
+  ylim(-1,2) +
+  labs(title = "2018-19 Goal Differentials", subtitle = "Goal Differential vs. Expected")
+```
+```{r}
+leafs2018 = read_csv("Evolving_Hockey_team_game_logs_2018-06-28_TOR_.csv")
+
+leafs2018 = leafs2018 %>% 
+  mutate(game = row_number()) %>% 
+  mutate(gamebin = case_when(game<11 ~ "1-10",
+                             game>10 & game<21 ~ "11-20",
+                             game>20 & game<31 ~ "21-30",
+                             game>30 & game<41 ~ "31-40",
+                             game>40 & game<51 ~ "41-50",
+                             game>50 & game<61 ~ "51-60",
+                             game>60 & game<71 ~ "61-70",
+                             game>70 ~ "71-82")) %>% 
+  group_by(gamebin) %>% 
+  summarize(GF = mean(GF),
+            GA = mean(GA),
+            G_diff = mean(G_diff),
+            xGF = mean(xGF),
+            xGA = mean(xGA),
+            xG_diff = mean(xG_diff))
+```
+```{r}
+leafs2018 %>% 
+  ggplot(aes(x = gamebin)) +
+  theme_fivethirtyeight() +
+  geom_line(aes(y=xG_diff), group = 1, color = "#00205B", size = 1.5) +
+  geom_line(aes(y=G_diff), group = 1, color = "#F47A38", size = 1.5) +
+  geom_point(aes(y=xG_diff), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#00205B") +
+  geom_point(aes(y=G_diff), fill = "white", size = 3, shape = 21, stroke = 1.5, color = "#F47A38") +
+  ylim(-1,2) +
+  labs(title = "2017-18 Goal Differentials", subtitle = "Goal Differential vs. Expected")
+```
+```{r}
+leafs %>% 
+  ggplot(aes(C_diff, G_diff)) +
+  geom_jitter(data = leafs %>% filter(C_diff<30 | G_diff>0),size = 5, alpha = 0.2) +
+  geom_jitter(data = leafs %>% filter(C_diff>30 & G_diff<0),size = 8, alpha = 0.6, color = "orange") +
+  theme_fivethirtyeight() +
+  geom_hline(yintercept = 0, alpha = 0.3) +
+  geom_vline(xintercept = 0, alpha = 0.3) +
+  geom_text_repel(data = leafs %>% filter(C_diff>30 & G_diff<0), aes(label = dateopp), point.padding = 0.25) +
+  labs(title = "Leafs get unlucky in March", subtitle = "Leafs differential matrix") +
+  xlim(-55,55) +
+  theme(axis.title = element_text()) + xlab('Corsi Differential') + ylab('Goal Differential')
+
+ggsave("luckiness.png")
+```
+
+```{r}
+leafs %>% 
+  mutate(month = month(game_date)) %>% 
+  mutate(month = as.character(month)) %>% 
+  ggplot(aes(G_diff, month)) +
+  geom_density_ridges() +
+  facet_wrap(~month)
+```
+

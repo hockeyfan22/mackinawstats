@@ -1,0 +1,117 @@
+---
+title: "rapm TOR charts"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(plotly)
+library(awtools)
+library(showtext)
+library(ggforce)
+library(ggridges)
+library(tidytext)
+
+
+rapm = read_csv("rapmrates.csv")
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+```{r}
+normalize <- function(x) {
+  x <- (x - mean(x))/sd(x)
+}
+
+leafs = rapm %>% 
+  mutate(Team = case_when(player == "ALEX.KERFOOT" ~ "TOR" , TRUE ~ Team)) %>% 
+  filter(position == "F") %>% 
+   group_by(player, Team) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  ungroup() %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  filter(Team == "TOR") %>% 
+  mutate(player = as_factor(player))
+
+leafs$player = factor(leafs$player, levels = c("ANDREAS.JOHNSSON", "AUSTON.MATTHEWS", "WILLIAM.NYLANDER", "ZACH.HYMAN", "JOHN.TAVARES", "MITCH.MARNER", "TREVOR.MOORE", "ALEX.KERFOOT", "KASPERI.KAPANEN"))
+
+leafs %>% 
+  filter(!is.na(player)) %>% 
+  select(-TOI) %>% 
+  melt() %>%
+  mutate(sign = case_when(value>0 ~ "pos", value<0 ~ "neg")) %>% 
+  ggplot(aes(value,variable)) +
+  geom_point() +
+  facet_wrap(~player, ncol = 3) +
+  geom_segment(aes(y = variable, yend = variable,
+                   x = 0, xend = value, color = sign), size = 2) +
+  geom_point(size = 4, aes(color = sign)) +
+  geom_vline(xintercept = 0) +
+  theme_ipsum_rc(grid = FALSE) +
+  labs(title = "Leafs' Top 9 RAPM rates", subtitle = "2018-19 season, Data from @Evolving Hockey", caption = "Chart by @MackinawStats", y="", x = "Standard Deviations") +
+  theme(legend.position = "none")
+
+```
+
+```{r}
+font_add_google("Mr De Haviland", "Mr De Haviland")
+font_add_google("Homemade Apple", "Homemade Apple")
+font_add_google("Marck Script", "Marck Script")
+font_add_google("Mr Bedfort", "Mr Bedfort")
+
+showtext_auto()
+
+
+leafs %>% 
+  filter(!is.na(player)) %>% 
+  select(-TOI) %>% 
+  melt() %>%
+  mutate(sign = case_when(value>0 ~ "pos", value<0 ~ "neg")) %>% 
+  ggplot(aes(value,variable)) +
+  geom_point() +
+  facet_wrap(~player, ncol = 3) +
+  geom_segment(aes(y = variable, yend = variable,
+                   x = 0, xend = value, color = sign), size = 2) +
+  geom_point(size = 4, aes(color = sign)) +
+  geom_vline(xintercept = 0) +
+  theme_pomological_fancy() +
+  labs(title = "Leafs' Top 9 RAPM rates", subtitle = "2018-19 season, Data from @Evolving Hockey", caption = "Chart by @MackinawStats", y="", x = "Standard Deviations") +
+  theme(legend.position = "none")
+```
+

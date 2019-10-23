@@ -1,0 +1,81 @@
+---
+title: "logs"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+teamlog = read_csv("gamelogs.csv")
+freddy = read_csv("freddy.csv")
+```
+```{r}
+teamlog %>% 
+  mutate(season = as.character(season)) %>% 
+  group_by(season) %>%
+  mutate(game = row_number()) %>% 
+  mutate(rollGF = rollmean(GF,5, align = "right", fill = NA),
+         rollGA = rollmean(GA,5, align = "right", fill = NA),
+         rollG_diff = rollmean(G_diff,5, align = "right", fill = NA),
+         rollxGF = rollmean(xGF,5, align = "right", fill = NA),
+         rollxGA = rollmean(xGA,5, align = "right", fill = NA),
+         rollxG_diff = rollmean(xG_diff,5, align = "right", fill = NA)) %>% 
+  select(Team, Opponent,season, rollGF,rollGA,rollG_diff,rollxGF, rollxGA, rollxG_diff,game) %>% 
+  ggplot(aes(game, rollG_diff)) +
+  geom_line(aes(color = season, group = season))
+```
+```{r}
+teamlog %>% 
+  mutate(season = as.character(season)) %>% 
+  group_by(season) %>%
+  mutate(game = row_number()) %>% 
+  mutate(rollGF = rollmean(GF,5, align = "right", fill = NA),
+         rollGA = rollmean(GA,5, align = "right", fill = NA),
+         rollG_diff = rollmean(G_diff,5, align = "right", fill = NA),
+         rollxGF = rollmean(xGF,5, align = "right", fill = NA),
+         rollxGA = rollmean(xGA,5, align = "right", fill = NA),
+         rollxG_diff = rollmean(xG_diff,5, align = "right", fill = NA)) %>% 
+  select(Team, Opponent,season, rollGF,rollGA,rollG_diff,rollxGF, rollxGA, rollxG_diff,game) %>% 
+  ggplot(aes(game, rollxG_diff)) +
+  geom_line(aes(color = season, group = season))
+```
+
+```{r}
+teamlog %>% 
+  group_by(season) %>% 
+  summarize(volatilityG = sd(G_diff),
+            volatilityxG = sd(xG_diff))
+```
+```{r}
+teamlogs = read_csv("teamlogs.csv")
+```
+```{r}
+teamlogs %>% 
+  group_by(Team) %>% 
+  summarize(volatilityG = sd(G_diff),
+            volatilityxG = sd(xG_diff),
+            volatilityC = sd(C_diff)) %>% 
+  arrange(desc(volatilityC))
+```
+

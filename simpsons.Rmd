@@ -1,0 +1,110 @@
+---
+title: "simp"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(plotly)
+library(awtools)
+library(showtext)
+library(ggforce)
+library(ggridges)
+library(tidytext)
+library(rayshader)
+library(rgl)
+library(tvthemes)
+
+simpsons <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-27/simpsons-guests.csv")
+```
+```{r}
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+font_add_google("Permanent Marker", "Permanent Marker")
+
+showtext_auto()
+```
+
+
+
+```{r}
+simpsons %>% 
+  group_by(episode_title, season) %>% 
+  summarize(guests = n()) %>% 
+  arrange(season) %>% 
+  ungroup() %>% 
+  group_by(season) %>% 
+  summarize(guestsszn = sum(guests)) %>% 
+  mutate(season = as.numeric(season)) %>% 
+  arrange(season) %>% 
+  ggplot(aes(season, guestsszn)) +
+  geom_line(size = 1.5, color = "#fed90f") +
+  geom_point() +
+  theme_simpsons(title.font = "Permanent Marker",
+                 text.font = "Permanent Marker",
+                 axis.text.size = 8) +
+  labs(title = "The Simpsons")
+```
+```{r}
+line = simpsons %>% 
+  group_by(season) %>%
+  summarise(episodes = n_distinct(episode_title),
+            guests = n()) %>% 
+  mutate(guestsperep = guests/episodes) %>% 
+  mutate(season = as.numeric(season)) %>% 
+  arrange(season) %>% 
+  ggplot(aes(season, guestsperep)) +
+  geom_line(size = 1.5, color = "#fed90f") +
+  geom_point(color = "black", size = 3, shape = 21, stroke = 1.5, fill = "white") +
+  theme_simpsons(title.font = "Permanent Marker",
+                 text.font = "Permanent Marker",
+                 axis.text.size = 8) +
+  labs(title = "The Simpsons: Guests Per Episode by Season", subtitle = "Data from Tidy Tuesday", y= "Guests Per Episode") +
+  ylim(0,6)
+
+bar = simpsons %>% 
+  count(guest_star) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  mutate(guest_star = fct_reorder(guest_star,n)) %>% 
+  ggplot(aes(guest_star, n, fill = guest_star)) +
+  geom_col() +
+  coord_flip() +
+  theme_simpsons(title.font = "Permanent Marker",
+                 text.font = "Permanent Marker",
+                 axis.text.size = 8) +
+  scale_fill_simpsons() +
+  theme(legend.position = "none") +
+  labs(title = "Most Frequent Guest Starts", y = "Appearances", x = "")
+
+combined = cowplot::plot_grid(line, bar)
+
+ggsave("plot2.pdf", width = 20)
+  
+```
+
+
+
+

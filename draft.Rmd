@@ -1,0 +1,193 @@
+---
+title: "draft"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+draft = read_csv("draft.csv") %>% 
+  mutate(Player = gsub("\\\\.*","",Player))
+```
+
+```{r}
+draftplot = draft %>% 
+  mutate(nationality = fct_lump(Nat., n = 2)) %>% 
+  filter(!is.na(nationality)) %>% 
+  group_by(Year, nationality) %>% 
+  summarize(count = n()) %>% 
+  ungroup() %>% 
+  group_by(Year) %>% 
+  mutate(total = sum(count)) %>% 
+  mutate(prop = count/total) %>% 
+  ggplot(aes(Year, prop, group = nationality, color = nationality)) +
+  geom_line(size = 1.2) +
+  facet_wrap(~nationality) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  labs(title = "Canada's share of draftees has declined", subtitle = "Nationality of draft picks by year (1963 - present), data from hockeyreference") +
+  scale_y_continuous(labels = percent) +
+  transition_reveal(Year)
+
+animate(draftplot, end_pause = 30)
+
+anim_save("draftplot.gif")
+```
+```{r}
+draft %>% 
+  mutate(Round = as.factor(Round)) %>% 
+  ggplot(aes(Round, PTS, color = Round)) +
+  geom_quasirandom(alpha = 0.2) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  labs(title = "Points declines deeper in the draft", subtitle = "Data from 1963 - present, from hockeyreference.com")
+
+ggsave("draftswarm.png")
+
+draft %>% 
+  filter(Year>2004) %>% 
+  mutate(Round = as.factor(Round)) %>% 
+  ggplot(aes(Round, PTS, color = Round)) +
+  geom_quasirandom(alpha = 0.2) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  labs(title = "Points by draft round", subtitle = "Data from 2005 - present, from hockeyreference.com")
+
+ggsave("draftswarm2.png")
+
+draft %>% 
+  filter(Round == 15) %>% 
+  arrange(desc(PTS))
+```
+```{r}
+draft2012 = draft %>% 
+filter(NHL == "x") %>% 
+  filter(Year>2009) 
+
+leafs = draft2012 %>% 
+  filter(Team == "Toronto Maple Leafs")
+
+draft2012 %>% 
+  ggplot(aes(Overall, GP)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = draft2012 %>% filter(Team == "Toronto Maple Leafs"), fill = "orange", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  geom_text_repel(data = leafs, aes(label = Player), size = 2.75, force = 3, point.padding = 0.2) +
+  theme_fivethirtyeight() +
+   theme(axis.title = element_text()) + ylab('Games Played') +
+  labs(title = "Leafs drafting since 2010", subtitle = "Data from hockeyreference.com", x = "Overall draft position", y = "Games Played")
+
+ggsave("leafsdraftwithlabels.png")
+
+draft2012 %>% 
+  ggplot(aes(Overall, GP)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = draft2012 %>% filter(Team == "Toronto Maple Leafs"), fill = "orange", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  geom_text_repel(data = leafs %>% filter(Overall<205), aes(label = Player), size = 3, force = 2, point.padding = 0.2) +
+  theme_fivethirtyeight() +
+   theme(axis.title = element_text()) + ylab('Games Played') +
+  labs(title = "Leafs drafting since 2010", subtitle = "Data from hockeyreference.com", x = "Overall draft position", y = "Games Played")
+
+ggsave("leafsdraftwithoutlabels.png")
+
+leaugeavg = draft2012 %>% 
+  filter(Round>1) %>% 
+  group_by(Team, Year) %>% 
+  summarize(GPtotal = sum(GP)) %>% 
+  ungroup() %>% 
+  group_by(Year) %>% 
+  mutate(GPtotal = mean(GPtotal)) %>% 
+  select(Year,GPtotal) %>% 
+  head(8)
+
+leafs2 = draft2012 %>% 
+  filter(Round>1) %>% 
+  filter(Team == "Toronto Maple Leafs") %>% 
+  group_by(Team, Year) %>% 
+  summarize(GPtotal = sum(GP))
+
+leafs2 %>% 
+  ggplot(aes(Year,GPtotal)) +
+  geom_line(color = "orange", size = 1.5) +
+  geom_line(data = leaugeavg, color = "grey", size = 1.5, alpha = 0.9) +
+  geom_point(data = leafs2,fill = "white", size = 3, shape = 21, stroke = 1.5, color = "orange") + 
+  geom_point(data = leaugeavg,fill = "white", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + ylab('Games Played') +
+  labs(title = "Games Played by draftees after Round 1", subtitle = "The Leafs have consistently lagged behind the league average", x = "Draft Year", y ="Games Played")
+
+ggsave("leafsround1.png")
+```
+
+```{r}
+draft2012 = draft %>% 
+filter(NHL == "x") %>% 
+  filter(Year>2009) 
+
+lightning = draft2012 %>% 
+  filter(Team == "Tampa Bay Lightning")
+
+draft2012 %>% 
+  ggplot(aes(Overall, GP)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = draft2012 %>% filter(Team == "Tampa Bay Lightning"), fill = "orange", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  geom_text_repel(data = lightning, aes(label = Player), size = 3, force = 2, point.padding = 0.1) +
+  theme_fivethirtyeight() +
+  labs(title = "Lightning drafting since 2012", subtitle = "Data from hockeyreference.com", x = "Overall draft position", y = "Games Played")
+
+ggsave("lightningdraft.png")
+```
+```{r}
+draft2012 %>% 
+  ggplot(aes(Overall, GP)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = draft2012 %>% filter(Team == "Toronto Maple Leafs"), fill = "orange", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  transition_manual(Year, cumulative = TRUE) +
+   labs(title = "Leafs drafting over the years", subtitle = "{frame_time}", x = "Overall draft position", y = "Games Played")
+```
+```{r}
+draft2012 %>% 
+  ggplot(aes(Overall, GP)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = draft2012 %>% filter(Team == "Toronto Maple Leafs"), fill = "orange", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  transition_time(Year) +
+  shadow_mark() +
+   labs(title = "Leafs drafting over the years", subtitle = "{round(frame_time,0)}", x = "Overall draft position", y = "Games Played")
+```
+```{r}
+draft2012 %>% 
+  ggplot(aes(Overall, GP)) +
+  geom_jitter(alpha = 0.2) +
+  geom_point(data = draft2012 %>% filter(Team == "Toronto Maple Leafs"), fill = "orange", size = 3, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  transition_time(Year) +
+   labs(title = "Leafs drafting over the years", subtitle = "{round(frame_time,0)}", x = "Overall draft position", y = "Games Played")
+```
+```{r}
+draft %>%
+  filter(Round<10) %>% 
+  mutate(Round = as.factor(Round)) %>% 
+  ggplot(aes(G, Round)) +
+  geom_density_ridges(rel_min_height = 0.2)
+```
+

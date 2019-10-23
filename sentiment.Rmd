@@ -1,0 +1,86 @@
+---
+title: "tidytext"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+```
+```{r}
+dubas = read_csv("dubas.csv", col_names = FALSE) %>% 
+  mutate(line = row_number()) %>% 
+  select(line, "text" = X1) %>% 
+  unnest_tokens(word, text) %>%
+  mutate(time = row_number())
+  
+```
+
+```{r}
+dubas  
+```
+```{r}
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+dubas %>% 
+  inner_join(nrc_joy) %>% 
+  count(word, sort = TRUE)
+```
+
+```{r}
+dubas = dubas %>% 
+  full_join(get_sentiments("bing")) %>% 
+  mutate(sentiment = case_when(is.na(sentiment) ~ "neutral", TRUE ~ sentiment)) %>% 
+  mutate(value = case_when(sentiment == "positive" ~ 1,
+                           sentiment == "negative" ~ -1,
+                           sentiment == "neutral" ~ 0)) %>% 
+  mutate(sum = cumsum(value)) %>% 
+  select(time,sum) %>% 
+  mutate(year = rep(2019))
+
+```
+```{r}
+dubas2 = read_csv("dubas2.csv", col_names = FALSE) %>% 
+  mutate(line = row_number()) %>% 
+  select(line, "text" = X1) %>% 
+  unnest_tokens(word, text) %>%
+  mutate(time = row_number()) %>% 
+  full_join(get_sentiments("bing")) %>% 
+  mutate(sentiment = case_when(is.na(sentiment) ~ "neutral", TRUE ~ sentiment)) %>% 
+  mutate(value = case_when(sentiment == "positive" ~ 1,
+                           sentiment == "negative" ~ -1,
+                           sentiment == "neutral" ~ 0)) %>% 
+  mutate(sum = cumsum(value)) %>% 
+  select(time,sum) %>% 
+  mutate(year = rep(2018))
+```
+```{r}
+dubas %>% 
+  rbind(dubas2) %>% 
+  mutate(year = as.character(year)) %>% 
+  ggplot(aes(time,sum, group = year, color = year)) +
+  geom_line(size = 1.5) +
+  ylim(0,100) +
+  ggthemes::theme_fivethirtyeight() +
+  labs(title = "Is Kyle Dubas Angry?", subtitle = "Sentiment Analysis of Camp Opening Presser", y = "Sentiment") +
+  annotate(geom = "rect", 
+           xmin = 2000, xmax = 3000, ymin = 60, ymax = 100,
+           fill = "orange", alpha = 0.15) +
+  annotate(geom = "text",
+           x = 1300, y = 87, size = 3.5,
+           label = "Dubas finished last year's \npresser more positively", hjust = 0) +
+  theme(legend.position = "top") +
+  theme(axis.title = element_text()) + xlab('Word Count')
+
+ggsave("sentiment.png")
+  
+```
+```{r}
+get_sentiments("bing")
+```
+

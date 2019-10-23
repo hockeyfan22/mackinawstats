@@ -1,0 +1,152 @@
+---
+title: "scrapingtest"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+library(rvest)
+library(reshape2)
+```
+
+```{r}
+#Specifying the url for desired website to be scraped
+url <- 'https://www.americanexpress.com/us/credit-cards/card-application/apply/prospect/terms/delta-gold-credit-card/36501-10-0/?pznOfferCode=SJHK-33X7TU-1TFX-CTE#offer-terms'
+
+#Reading the HTML code from the website
+webpage <- read_html(url)
+
+#Using CSS selectors to scrape the rankings section
+AmexBonushtml <- html_nodes(webpage,'b')
+
+#Converting the ranking data to text
+AmexBonus <- html_text(AmexBonushtml)
+
+#Let's have a look at the rankings
+AmexBonus = tibble(AmexBonus[31])
+AmexBonus$AmexBonus = gsub("[^[:digit:].]", "",  AmexBonus$`AmexBonus[31]`)
+AmexBonus = AmexBonus %>% 
+  mutate(AmexBonus = as.numeric(AmexBonus)) %>% 
+  select(AmexBonus)
+AmexBonus
+```
+```{r}
+#Specifying the url for desired website to be scraped
+url <- 'https://citicards.citi.com/usc/LPACA/AA/AAdvantage/Family/ps_A/index.html?cmp=KNC~01~110901~CRDACQXX~Google&gclid=CjwKCAjwtO7qBRBQEiwAl5WC2zbi0N5MHUHnilv1DKqucqFqGpJNxGGtgCiskKv2LGcoyoqhcUGdOxoCw0UQAvD_BwE&gclsrc=aw.ds&BT_TX=1&ProspectID=9A330EAC34F542A683C76C905FED5352'
+
+#Reading the HTML code from the website
+webpage <- read_html(url)
+
+#Using CSS selectors to scrape the rankings section
+CitiBonushtml <- html_nodes(webpage,'.Offer_Single_3__copy__callout')
+
+#Converting the ranking data to text
+CitiBonus <- html_text(CitiBonushtml)
+
+#Let's have a look at the rankings
+CitiBonus = tibble(CitiBonus[2])
+CitiBonus$CitiBonus = gsub("[^[:digit:].]", "",  CitiBonus$`CitiBonus[2]`)
+CitiBonus = CitiBonus %>% 
+  mutate(CitiBonus = as.numeric(CitiBonus)) %>% 
+  select(CitiBonus)
+CitiBonus
+```
+
+```{r}
+#Specifying the url for desired website to be scraped
+url <- 'https://www.theexplorercard.com/consumer-cards/explorer?cell=RRW&jp_cmp=cc/United+Explorer_Brand_Exact_United+Explorer_SEM_US_NA_Standard_NA/sea/p25773635820/Chase+United&gclid=CjwKCAjwtO7qBRBQEiwAl5WC2-dwpfLMALKEHFXWjWmJOsti12ids8gxM9fH0046xv2xJVQCYQ5wbBoCFdkQAvD_BwE&gclsrc=aw.ds'
+
+#Reading the HTML code from the website
+webpage <- read_html(url)
+
+#Using CSS selectors to scrape the rankings section
+ChaseBonushtml <- html_nodes(webpage,'h2')
+
+#Converting the ranking data to text
+ChaseBonus <- html_text(ChaseBonushtml)
+ChaseBonus
+
+#Let's have a look at the rankings
+ChaseBonus = tibble(ChaseBonus[18])
+ChaseBonus$ChaseBonus = gsub("[^[:digit:].]", "",  ChaseBonus$`ChaseBonus[18]`)
+ChaseBonus = ChaseBonus %>% 
+  mutate(ChaseBonus = as.numeric(ChaseBonus)) %>% 
+  select(ChaseBonus)
+ChaseBonus
+```
+```{r}
+#Specifying the url for desired website to be scraped
+url <- 'https://www.southwest.com/html/rapidrewards/partners/credit-cards/southwest-airlines-rapid-rewards-cards/index.html'
+
+#Reading the HTML code from the website
+webpage <- read_html(url)
+
+#Using CSS selectors to scrape the rankings section
+SouthwestBonushtml <- html_nodes(webpage,'h2')
+
+#Converting the ranking data to text
+SouthwestBonus <- html_text(SouthwestBonushtml)
+SouthwestBonus
+
+#Let's have a look at the rankings
+SouthwestBonus = tibble(SouthwestBonus[9])
+SouthwestBonus$SouthwestBonus = gsub("[^[:digit:].]", "",  SouthwestBonus$`SouthwestBonus[9]`)
+SouthwestBonus = SouthwestBonus %>% 
+  mutate(SouthwestBonus = as.numeric(SouthwestBonus)) %>% 
+  select(SouthwestBonus)
+SouthwestBonus
+```
+```{r}
+#Specifying the url for desired website to be scraped
+url <- 'https://cards.barclaycardus.com/banking/cards/aadvantage-aviator-red-world-elite-mastercard/'
+
+#Reading the HTML code from the website
+webpage <- read_html(url)
+
+#Using CSS selectors to scrape the rankings section
+BarclaysBonushtml <- html_nodes(webpage,'p')
+
+#Converting the ranking data to text
+BarclaysBonus <- html_text(BarclaysBonushtml)
+BarclaysBonus
+
+#Let's have a look at the rankings
+BarclaysBonus = tibble(BarclaysBonus[21])
+BarclaysBonus$BarclaysBonus = gsub("[^[:digit:].]", "",  BarclaysBonus$`BarclaysBonus[21]`)
+BarclaysBonus = BarclaysBonus %>% 
+  mutate(BarclaysBonus = as.numeric(BarclaysBonus)) %>% 
+  select(BarclaysBonus)
+BarclaysBonus
+```
+```{r}
+master = AmexBonus %>% 
+  cbind(BarclaysBonus, ChaseBonus, CitiBonus, SouthwestBonus) %>% 
+  melt() %>% 
+  mutate(date = Sys.Date())
+
+master
+
+write.csv(master, paste0(format(Sys.time(), "%d-%b-%Y %H.%M"), ".csv"))
+```
+
+
+

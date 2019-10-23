@@ -1,0 +1,76 @@
+---
+title: "GAR"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("GAR.csv") 
+  
+nhl = nhl %>% 
+mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  mutate(season = as.character(season))
+```
+```{r}
+kadri = nhl %>% 
+  filter(GP>20) %>% 
+  filter(player == "NAZEM.KADRI")
+
+brown = nhl %>% 
+  filter(GP>20) %>% 
+  filter(player == "CONNOR.BROWN")
+
+kapanen = nhl %>% 
+  filter(GP>20) %>% 
+  filter(player == "KASPERI.KAPANEN")
+
+nhl %>% 
+  filter(GP>20) %>% 
+  ggplot(aes(season, GAR_60)) +
+  geom_quasirandom(alpha = 0.1) +
+  geom_point(data = kadri, color = "blue", size = 3, alpha = 0.4) +
+  geom_point(data = brown, color = "orange", size = 3, alpha = 0.4) +
+  geom_point(data = kapanen, color = "red", size = 3, alpha = 0.4) +
+  geom_line(data = kadri, color = "blue", size = 1, alpha = 0.4, group = 1) +
+  geom_line(data = brown, color = "orange", size = 1, alpha = 0.4, group = 1) +
+  geom_line(data = kapanen, color = "red", size = 1, alpha = 0.4, group = 1) +
+  theme_fivethirtyeight() +
+  geom_hline(yintercept = 0, alpha = 0.4) +
+   theme(axis.title = element_text()) + ylab('GAR/60') +
+  labs(title = "Kadri/Kapanen/Brown could be on the block", subtitle = "Goals Above Replacement Per 60, data from EvolvingHockey.com", x = "Season")
+
+ggsave("Trade.png")
+```
+

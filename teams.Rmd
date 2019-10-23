@@ -1,0 +1,66 @@
+---
+title: "teams"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("teams.csv") 
+  
+nhl = nhl %>% 
+mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season)) %>% 
+  mutate(season = as.character(season))
+```
+```{r}
+leafs = nhl %>% 
+  filter(Team == "TOR") %>% 
+  mutate(image = case_when(season == 2008 ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/maurice.png",
+                           season>2008 & season<2013 ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/wilson.png",
+                           season>2012 & season<2016 ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/carlise.png",
+                           season>2015 ~ "https://github.com/hockeyfan22/mackinawstats/raw/master/babs.png"))
+
+nhl %>% 
+  ggplot(aes(season,xG_diff_60)) +
+  geom_point(alpha = 0.2) +
+  geom_line(data = leafs, group = 1, alpha = 0.2, color = "blue", fill = "blue") +
+  geom_image(data = leafs,aes(image=image), size=0.05) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) + ylab('Expected Goal Differential') +
+  labs(title = "Leafs ''HEAD'' Coaches - Expected Goals +/-", subtitle = "Data from EvolvingHockey", x = "Season", y = "Expected Goal Differential")
+
+ggsave("heads.png")  
+
+```
+

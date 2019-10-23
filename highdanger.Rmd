@@ -1,0 +1,75 @@
+---
+title: "Untitled"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(beeswarm)
+library(hrbrthemes)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+import_plex_sans()
+
+```
+
+```{r}
+totals = read_csv("totals.csv")
+```
+
+```{r}
+totals = totals %>% 
+  select(Team,Season, `HDCF/60`, `HDCA/60`) %>% 
+  group_by(Season) %>% 
+  mutate(rankCF = rank(-`HDCF/60`),
+         rankCA = rank(`HDCA/60`)) %>% 
+  gather(rankCF, rankCA, key = "metric", value = "value") %>% 
+  ungroup() %>% 
+  mutate(Season = factor(Season, levels = c("2019", "2018"))) %>% 
+  mutate(metric = factor(metric, levels = c("rankCF", "rankCA"))) %>% 
+  mutate(color = ifelse(Team == "Toronto Maple Leafs", "yes","no"))
+
+
+```
+
+```{r}
+totals %>% 
+  ggplot(aes(Season, value)) +
+  geom_quasirandom(data = totals %>% filter(Team != "Toronto Maple Leafs"), alpha = 0.2, width = 0.1, size = 2) +
+  coord_flip() +
+  theme_ipsum_ps(grid = FALSE) +
+  facet_wrap(~metric) +
+  geom_point(data = totals %>% filter(Team == "Toronto Maple Leafs"), alpha = 0.8, color = "#00205B", size = 3) +
+  labs(title = "The Leafs Aren't Getting High Danger Chances")
+```
+
+```{r}
+names = c(`rankCF` = "HDCF/60 (Rank)",
+          `rankCA` = "HDCA/60 (Rank)")
+
+totals %>% 
+  ggplot(aes(Season, value)) +
+  geom_quasirandom(data = totals %>% filter(Team != "Toronto Maple Leafs"), alpha = 0.2, width = 0.1, size = 3) +
+  coord_flip() +
+  theme_ipsum_ps(grid = FALSE) +
+  facet_wrap(~metric, labeller = as_labeller(names)) +
+  geom_point(data = totals %>% filter(Team == "Toronto Maple Leafs"), alpha = 0.8, color = "#00205B", size = 5) +
+  labs(title = "The Leafs Aren't Getting High Danger Chances", subtitle = "High Danger Corsi Per 60 from Natural Stat Trick", y = "Rank", x= "", caption = "Chart by @MackinawStats")
+
+ggsave("hd.pdf")
+```
+```{r}
+totals %>% 
+  filter(Team == "Toronto Maple Leafs")
+```
+

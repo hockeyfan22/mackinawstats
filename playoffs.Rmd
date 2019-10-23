@@ -25,7 +25,7 @@ library(ggimage)
 library(beeswarm)
 library(ggbeeswarm)
 
-playoffs = read_csv("playoffs4.csv")
+playoffs = read_csv("playoffs9.csv")
 ```
 
 #Columbus vs. Tampa
@@ -84,6 +84,24 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("cbjtblgame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30114") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("T.B" = "#002868", "CBJ" = "#CE1126")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 TBL @ CBJ", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("cbjtblgame4.gif")
 ```
 
 ```{r}
@@ -140,6 +158,24 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("pitnyigame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30144") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("PIT" = "#FCB514", "NYI" = "#00539B")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 NYI @ PIT", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("pitnyigame4.gif")
 ```
 ```{r}
 playoffs %>% 
@@ -195,6 +231,60 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("wpgstlgame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30164") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("WPG" = "#041E42", "STL" = "#FCB514")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 WPG @ STL", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("wpgstlgame4.gif")
+
+playoffs %>% 
+  filter(game_id == "30165") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("WPG" = "#041E42", "STL" = "#FCB514")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 5 STL @ WPG", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("wpgstlgame5.gif")
+
+playoffs %>% 
+  filter(game_id == "30166") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("WPG" = "#041E42", "STL" = "#FCB514")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 6 WPG @ STL", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("wpgstlgame6.gif")
 ```
 
 ```{r}
@@ -251,6 +341,42 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("dalnshgame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30154") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("DAL" = "#006847", "NSH" = "#FFB81C")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 NSH @ DAL", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("dalnshgame4.gif")
+
+playoffs %>% 
+  filter(game_id == "30155") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("DAL" = "#006847", "NSH" = "#FFB81C")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 5 DAL @ NSH", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("dalnshgame5.gif")
 ```
 
 ```{r}
@@ -307,6 +433,42 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("sjvgkgame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30184") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("S.J" = "#006D75", "VGK" = "#B4975A")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 S.J @ VGK", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("sjvgkgame4.gif")
+
+playoffs %>% 
+  filter(game_id == "30185") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("S.J" = "#006D75", "VGK" = "#B4975A")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 5 VGK @ S.J", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("sjvgkgame5.gif")
 ```
 
 ```{r}
@@ -363,6 +525,42 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("wshcargame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30134") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("WSH" = "#041E42", "CAR" = "#CC0000")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 WSH @ CAR", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("wshcargame4.gif")
+
+playoffs %>% 
+  filter(game_id == "30135") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("WSH" = "#041E42", "CAR" = "#CC0000")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 5 CAR @ WSH", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("wshcargame5.gif")
 ```
 ```{r}
 playoffs %>% 
@@ -418,6 +616,42 @@ playoffs %>%
   expand_limits(x=65)
 
 anim_save("cgycolgame3.gif")
+
+playoffs %>% 
+  filter(game_id == "30174") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("CGY" = "#C8102E", "COL" = "#6F263D")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 CGY @ COL", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("cgycolgame4.gif")
+
+playoffs %>% 
+  filter(game_id == "30175") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("CGY" = "#C8102E", "COL" = "#6F263D")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 5 COL @ CGY", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+  geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("cgycolgame5.gif")
 ```
 ```{r}
 playoffs %>% 
@@ -470,6 +704,42 @@ geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
   expand_limits(x=65)
 
 anim_save("game3.gif")
+
+playoffs %>% 
+  filter(game_id == "30124") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#003E7E", "BOS" = "#FFB81C")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 4 BOS @ TOR", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("game4.gif")
+
+playoffs %>% 
+  filter(game_id == "30125") %>% 
+  select(teamCode, time, event, xGoal, shotWasOnGoal) %>% 
+  group_by(teamCode) %>% 
+  mutate(cumxGoal = cumsum(xGoal)) %>% 
+  mutate(time = time/60) %>% 
+  ggplot(aes(time,cumxGoal, group = teamCode, color = teamCode)) + 
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("TOR" = "#003E7E", "BOS" = "#FFB81C")) +
+  theme_fivethirtyeight() +
+  labs(title = "Expected Goals, Game 5 TOR @ BOS", subtitle = "Data from Moneypuck.com") +
+  transition_reveal(time) +
+  theme(legend.position="none") +
+geom_text(aes(x = 60, label = teamCode), hjust = 0, size = 5) +
+  expand_limits(x=65)
+
+anim_save("game5.gif")
 ```
 
 

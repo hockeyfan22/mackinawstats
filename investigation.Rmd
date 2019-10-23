@@ -1,0 +1,79 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(showtext)
+library(extrafont)
+library(ggrepel)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+new = read_csv("shots1819.csv")
+new2 = read_csv("shots_2011-2018.csv")
+```
+
+```{r}
+sum19 = new %>% 
+  group_by(season) %>% 
+  summarize(meandist = mean(arenaAdjustedShotDistance),
+            meanxcord = mean(arenaAdjustedXCordABS),
+            meanycord = mean(arenaAdjustedYCordAbs)) %>% 
+  filter(season == 2019)
+```
+```{r}
+sum18 = new2 %>% 
+  group_by(season) %>% 
+  summarize(meandist = mean(arenaAdjustedShotDistance),
+            meanxcord = mean(arenaAdjustedXCordABS),
+            meanycord = mean(arenaAdjustedYCordAbs))
+```
+
+```{r}
+sum18 %>% 
+  rbind(sum19) %>% 
+  select(-meanycord) %>%
+  mutate(meandist = round(meandist,2)) %>% 
+  mutate(meanxcord = round(meanxcord,2)) %>% 
+  ggplot(aes(season, meandist)) +
+  geom_line(size = 1.5, color = "orange") +
+  geom_point(fill = "white", size = 4, alpha = 0.9, height = 0.00, width = 0.1, shape = 21, stroke = 1.5, color = "black") +
+  scale_x_continuous(breaks = c(2011,2012,2013,2014,2015,2016,2017,2018,2019)) +
+  ylim(30,40) +
+  ggthemes::theme_fivethirtyeight() +
+  geom_text_repel(aes(label = meandist), point.padding = 0.15) +
+  theme(axis.title = element_text()) +
+  labs(title = "Mean Shot Distance, 2011-2019", x = "Season", y = "Mean Shot Distance")
+
+ggsave("meanshotdist.pdf")
+```
+```{r}
+sum18 %>% 
+  rbind(sum19) %>% 
+  select(-meanycord) %>%
+  mutate(meandist = round(meandist,2)) %>% 
+  mutate(meanxcord = round(meanxcord,2)) %>% 
+  ggplot(aes(season, meanxcord)) +
+  geom_line(size = 1.5, color = "orange") +
+  geom_point(fill = "white", size = 4, alpha = 0.9, height = 0.00, width = 0.1, shape = 21, stroke = 1.5, color = "black") +
+  scale_x_continuous(breaks = c(2011,2012,2013,2014,2015,2016,2017,2018,2019)) +
+  ggthemes::theme_fivethirtyeight() +
+  ylim(50,60) +
+  geom_text_repel(aes(label = meanxcord), point.padding = 0.15) +
+  theme(axis.title = element_text()) +
+  labs(title = "Mean X Coordinate, 2011-2019", x = "Season", y = "Mean X Coordinate (Abs)")
+
+ggsave("meanxcord.pdf")
+```
+

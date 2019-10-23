@@ -1,0 +1,68 @@
+---
+title: "teampercentage"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("evohockey.csv")
+```
+
+```{r}
+nhl %>% 
+  group_by(Team) %>% 
+  mutate(teampoints = sum(Points)) %>% 
+  mutate(iPointspercent = (Points/teampoints)*100) %>% 
+  mutate(iPointspercent = round(iPointspercent,1)) %>% 
+  arrange(desc(iPointspercent)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(player,iPointspercent),iPointspercent, fill = Team)) +
+  geom_col() +
+  coord_flip() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_text(aes(label = iPointspercent), position = position_stack(vjust = 0.5),colour = "white", size = 3,show.legend = F) +
+  labs(title = "Top Points contributors in the NHL", subtitle = "Percent contribution to team points")
+
+ggsave("toppoints.png")
+```
+```{r}
+nhl %>% 
+  group_by(Team) %>% 
+  mutate(teampoints = sum(Points)) %>% 
+  mutate(iPointspercent = (Points/teampoints)*100) %>% 
+  mutate(iPointspercent = round(iPointspercent,1)) %>% 
+  filter(Team == "TOR") %>% 
+  arrange(desc(iPointspercent)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(player,iPointspercent),iPointspercent, fill = "#00205B")) +
+  geom_col(fill = "#00205B") +
+  coord_flip() +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  geom_text(aes(label = iPointspercent), position = position_stack(vjust = 0.5),colour = "white", size = 3,show.legend = F) +
+  labs(title = "Top Points contributors on the Leafs", subtitle = "Percent contribution to the Leafs points")
+
+ggsave("leafspoints.png")
+```
+

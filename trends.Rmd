@@ -1,0 +1,370 @@
+---
+title: "trends"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("allstatsrates.csv") 
+  
+nhl = nhl %>% 
+mutate(season = case_when(season == "20072008" ~ 2008,
+                            season == "20082009" ~ 2009,
+                            season == "20092010" ~ 2010,
+                            season == "20102011" ~ 2011,
+                            season == "20112012" ~ 2012,
+                            season == "20122013" ~ 2013,
+                            season == "20132014" ~ 2014,
+                            season == "20142015" ~ 2015,
+                            season == "20152016" ~ 2016,
+                            season == "20162017" ~ 2017,
+                            season == "20172018" ~ 2018,
+                            season == "20182019" ~ 2019,
+                            TRUE ~ season))
+```
+```{r}
+#mean
+metrics = nhl %>% 
+  filter(GP>20) %>% 
+  group_by(season,position) %>% 
+  summarize(G60 = mean(G_60),
+            A601 = mean(A1_60),
+            A602 = mean(A2_60),
+            P60 = mean(Points_60),
+            CF60 = mean(iCF_60)) 
+
+plot1 = metrics %>% 
+  ggplot(aes(season,CF60,group = position, color = position)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  scale_x_continuous(breaks = c(20072008, 20092010, 20112012, 20132014, 20152016, 20172018, 20182019), labels = c("2008", "2010", "2012", "2014", "2016", "2018", "2019")) +
+  theme_fivethirtyeight() +
+  labs(title = "Shots are increasing among defensemen...", subtitle = "Individual Corsi per 60 among players with 20 GP") +
+  transition_reveal(season)
+
+anim_save("shotsd.gif")
+
+plot2 = metrics %>% 
+  ggplot(aes(season,P60,group = position, color = position)) +
+  geom_line(size = 1.5) +
+  expand_limits(y=0) +
+  scale_x_continuous(breaks = c(20072008, 20092010, 20112012, 20132014, 20152016, 20172018, 20182019), labels = c("2008", "2010", "2012", "2014", "2016", "2018", "2019")) +
+  theme_fivethirtyeight() +
+  labs(title = "...but has yet to impact point production", subtitle = "Points per 60 among D/F with 20 GP") +
+  transition_reveal(season)
+
+anim_save("pointsd.gif")
+
+plots3 = plot_grid(plot1,plot2)
+
+plots3 +
+  transition_reveal(season)
+
+ggsave("combined.png")
+```
+```{r}
+#median
+nhl %>% 
+  filter(GP>20) %>% 
+  group_by(season,position) %>% 
+  summarize(G60 = median(G_60),
+            A601 = median(A1_60),
+            A602 = median(A2_60),
+            P60 = median(Points_60)) %>% 
+  ggplot(aes(season,A602,group = position, color = position)) +
+  geom_line() +
+  expand_limits(y=0)
+```
+```{r}
+#sum
+nhl %>% 
+  filter(GP>40) %>% 
+  group_by(season,position) %>% 
+  summarize(G60 = sum(G_60),
+            A601 = sum(A1_60),
+            A602 = sum(A2_60),
+            P60 = sum(Points_60)) %>% 
+  ggplot(aes(season,A602,group = position, color = position)) +
+  geom_line() +
+  expand_limits(y=0)
+```
+
+```{r}
+#points,goals,assists distribution
+nhl %>%
+  filter(season== "2019") %>% 
+  select(player,position,season,Team, GP, TOI, G_60, A1_60, A2_60, Points_60) %>% 
+  filter(GP>20) %>% 
+  gather(G_60, A1_60, A2_60, Points_60, key = "metric", value = "value") %>% 
+  ggplot(aes(value, metric)) +
+  geom_jitter(alpha = 0.05, height = 0.05) +
+  theme_fivethirtyeight()
+```
+
+```{r}
+points = nhl %>% 
+  filter(season == "2018" | season == "2019") %>% 
+  filter(GP>20) %>% 
+  mutate(A_60 = A1_60 + A2_60) %>% 
+  select(player,season,Team,GP,Points_60) %>%  
+  group_by(player,season) %>% 
+  summarize(Points_60 = mean(Points_60)) %>% 
+  spread(season, Points_60) %>% 
+  rename(P_6018 = '2018', P_6019 = '2019') %>% 
+  filter(!is.na(P_6018) & !is.na(P_6019)) %>% 
+  mutate(pdiff = P_6019 - P_6018) %>% 
+  select(player, pdiff)
+
+goals = nhl %>% 
+  filter(season == "2018" | season == "2019") %>% 
+  filter(GP>20) %>% 
+  mutate(A_60 = A1_60 + A2_60) %>% 
+  select(player,season,Team,GP,G_60) %>%  
+  group_by(player,season) %>% 
+  summarize(Goals_60 = mean(G_60)) %>% 
+  spread(season, Goals_60) %>% 
+  rename(G_6018 = '2018', G_6019 = '2019') %>% 
+  filter(!is.na(G_6018) & !is.na(G_6019)) %>% 
+  mutate(gdiff = G_6019 - G_6018) %>% 
+  select(player,gdiff)
+
+assists = nhl %>% 
+  filter(season == "2018" | season == "2019") %>% 
+  filter(GP>20) %>% 
+  mutate(A_60 = A1_60 + A2_60) %>% 
+  select(player,season,Team,GP,A_60) %>%  
+  group_by(player,season) %>% 
+  summarize(Assists_60 = mean(A_60)) %>% 
+  spread(season, Assists_60) %>% 
+  rename(A_6018 = '2018', A_6019 = '2019') %>% 
+  filter(!is.na(A_6018) & !is.na(A_6019)) %>% 
+  mutate(adiff = A_6019 - A_6018) %>% 
+  select(player,adiff)
+
+joined1 = left_join(points, goals)
+joined2 = left_join(joined1, assists)
+
+```
+```{r}
+joined2 %>% 
+  gather(pdiff,gdiff,adiff,key = "metric", value = "value") %>% 
+  ggplot(aes(value,metric)) +
+  geom_jitter(height = 0.05, alpha = 0.1) +
+  geom_vline(xintercept = 0)
+```
+
+```{r}
+points = nhl %>% 
+  filter(season == "2018" | season == "2019") %>% 
+  filter(GP>20) %>% 
+  mutate(A_60 = A1_60 + A2_60) %>% 
+  select(player,season,Team,GP,Points_60) %>%  
+  group_by(player,season, Team) %>% 
+  summarize(Points_60 = mean(Points_60)) %>% 
+  spread(season, Points_60) %>% 
+  rename(P_6018 = '2018', P_6019 = '2019') %>% 
+  filter(!is.na(P_6018) & !is.na(P_6019)) %>% 
+  mutate(pdiff = P_6019 - P_6018) %>% 
+  select(player, Team, pdiff)
+
+goals = nhl %>% 
+  filter(season == "2018" | season == "2019") %>% 
+  filter(GP>20) %>% 
+  mutate(A_60 = A1_60 + A2_60) %>% 
+  select(player,season,Team,GP,G_60) %>%  
+  group_by(player,season, Team) %>% 
+  summarize(Goals_60 = mean(G_60)) %>% 
+  spread(season, Goals_60) %>% 
+  rename(G_6018 = '2018', G_6019 = '2019') %>% 
+  filter(!is.na(G_6018) & !is.na(G_6019)) %>% 
+  mutate(gdiff = G_6019 - G_6018) %>% 
+  select(player,Team,gdiff)
+
+assists = nhl %>% 
+  filter(season == "2018" | season == "2019") %>% 
+  filter(GP>20) %>% 
+  mutate(A_60 = A1_60 + A2_60) %>% 
+  select(player,season,Team,GP,A_60) %>%  
+  group_by(player,season, Team) %>% 
+  summarize(Assists_60 = mean(A_60)) %>% 
+  spread(season, Assists_60) %>% 
+  rename(A_6018 = '2018', A_6019 = '2019') %>% 
+  filter(!is.na(A_6018) & !is.na(A_6019)) %>% 
+  mutate(adiff = A_6019 - A_6018) %>% 
+  select(player,Team,adiff)
+
+joined3 = left_join(points, goals)
+joined4 = left_join(joined3, assists)
+```
+```{r}
+set.seed(123)
+
+team = joined4 %>% 
+  filter(Team == "TOR" & (pdiff> 0.5)) %>% 
+  gather(pdiff,gdiff,adiff,key = "metric", value = "value")
+
+joined4 %>% 
+  gather(pdiff,gdiff,adiff,key = "metric", value = "value") %>% 
+  ggplot(aes(value,metric)) +
+  geom_point(size = 3,height = 0.05, alpha = 0.1, fill = "grey") +
+  geom_jitter(data = team, fill = "orange", size = 5, alpha = 0.9, height = 0.00, width = 0.1, shape = 21, stroke = 1.5, color = "black") +
+  geom_vline(xintercept = 0, size = .01) +
+  theme_fivethirtyeight() +
+  scale_y_discrete(breaks=c("pdiff","gdiff","adiff"),
+        labels=c("P/60 improvement", "G/60 improvement", "A/60 improvement")) +
+  labs(title = "Improvements in Per 60 Metrics", subtitle = "Improvements in Per 60 metrics between 2018 and 2019")
+
+ggsave("improvements.png")
+
+#COLORS FOR BELOW OR ABOVE 0?
+  
+```
+```{r}
+#why did they improve? Marner and Kapanen had better roles - look at lines and on ice SH%
+lines = read_csv("lines (1).csv")
+
+```
+```{r}
+lines %>% 
+  filter(team == "TOR") %>% 
+  filter(str_detect(name,'Marner|Kapanen')) %>% 
+  mutate(indicator = case_when(str_detect(name,"Marner") ~ "Marner",
+                               str_detect(name, "Kapanen") ~ "Kapanen",
+                               TRUE ~ "NA")) %>% 
+  arrange(desc(icetime)) %>% 
+  filter(games_played>15) %>% 
+  select(season, name, indicator, games_played, icetime, xOnGoalFor, xGoalsFor) %>% 
+  mutate(season = as.character(season)) %>% 
+  mutate(icetimemin = icetime/60) %>% 
+  mutate(xOn60 = xOnGoalFor/icetimemin) %>% 
+  mutate(xG60 = xGoalsFor/icetimemin) %>% 
+  ggplot(aes(icetimemin, xOn60, color = indicator, shape = season)) +
+  geom_point(size=4)
+  
+lines %>% 
+  filter(team == "TOR") %>% 
+  filter(str_detect(name,'Marner|Kapanen')) %>% 
+  mutate(indicator = case_when(str_detect(name,"Marner") ~ "Marner",
+                               str_detect(name, "Kapanen") ~ "Kapanen",
+                               TRUE ~ "NA")) %>% 
+  arrange(desc(icetime)) %>% 
+  filter(games_played>15) %>% 
+  select(season, name, indicator, games_played, icetime, xOnGoalFor, xGoalsFor) %>% 
+  mutate(season = as.character(season)) %>% 
+  mutate(icetimemin = icetime/60) %>% 
+  mutate(xOn60 = xOnGoalFor/icetimemin) %>% 
+  mutate(xG60 = xGoalsFor/icetimemin) %>% 
+  ggplot(aes(icetimemin, xG60, color = indicator, shape = season)) +
+  geom_point()
+                               
+                              
+
+```
+```{r}
+#MARNER ONLY
+lines %>% 
+  filter(team == "TOR") %>% 
+  filter(str_detect(name,'Marner|Kapanen')) %>% 
+  mutate(indicator = case_when(str_detect(name,"Marner") ~ "Marner",
+                               str_detect(name, "Kapanen") ~ "Kapanen",
+                               TRUE ~ "NA")) %>% 
+  filter(indicator == "Marner") %>% 
+  arrange(desc(icetime)) %>% 
+  filter(games_played>15) %>% 
+  select(season, name, indicator, games_played, icetime, xOnGoalFor, xGoalsFor) %>% 
+  mutate(season = as.character(season)) %>% 
+  mutate(icetimemin = icetime/60) %>%
+  mutate(icetime60 = icetimemin/60) %>% 
+  filter(icetimemin>200) %>% 
+  mutate(xOn60 = xOnGoalFor/icetime60) %>% 
+  mutate(xG60 = xGoalsFor/icetime60) %>% 
+  ggplot(aes(icetimemin, xG60, color = season)) +
+  geom_point(size = 7, alpha = 0.4) +
+  expand_limits(x=0,y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Marner's lines created more chances in 2019", subtitle = "Expected Goals per 60 among frequent Marner lines", x = "TOI (min)", y= "Expected Goals Per 60") +
+  theme(legend.position = "none") +
+  theme(axis.title = element_text()) + ylab('Expected Goals Per 60')
+
+ggsave("marnerlines.png")
+  
+```
+
+```{r}
+#KAP ONLY
+lines %>% 
+  filter(team == "TOR") %>% 
+  filter(str_detect(name,'Marner|Kapanen')) %>% 
+  mutate(indicator = case_when(str_detect(name,"Marner") ~ "Marner",
+                               str_detect(name, "Kapanen") ~ "Kapanen",
+                               TRUE ~ "NA")) %>% 
+  filter(indicator == "Kapanen") %>% 
+  arrange(desc(icetime)) %>% 
+  filter(games_played>5) %>% 
+  select(season, name, indicator, games_played, icetime, xOnGoalFor, xGoalsFor) %>% 
+  mutate(season = as.character(season)) %>% 
+  mutate(icetimemin = icetime/60) %>% 
+  mutate(icetime60 = icetimemin/60) %>% 
+  mutate(xOn60 = xOnGoalFor/icetime60) %>% 
+  mutate(xG60 = xGoalsFor/icetime60) %>% 
+  filter(icetimemin>100) %>% 
+  ggplot(aes(icetimemin, xG60, color = season)) +
+  geom_point(size = 7, alpha = 0.4) +
+  expand_limits(x=0,y=0) +
+  theme_fivethirtyeight() +
+  labs(title = "Kapanen's lines also created more chances in 2019", subtitle = "On Ice Expected Goals per 60 among frequent Kapanen lines", x = "TOI (min)", y= "Expected Goals Per 60") +
+  theme(legend.position = "none") +
+  theme(axis.title = element_text()) + ylab('Expected Goals Per 60')
+
+ggsave("kapanenlines.png")
+```
+```{r}
+
+```
+```{r}
+#RIELLY INFORMATION
+
+nhl %>% 
+  filter(player == "MORGAN.RIELLY") %>% 
+  select(player,season,G_60, ixG_60, Sh_perc) %>% 
+  gather(G_60, ixG_60, Sh_perc, key = "metric", value = "value") %>% 
+  ggplot(aes(season,value, group = metric, color = metric)) +
+  geom_line(size = 1.5) +
+  theme_fivethirtyeight() +
+  labs(title = "Morgan Rielly's success driven by SH%", subtitle = "Selected Metrics: Goals per 60, Expected Goals per 60, Shooting Percentage") +
+  facet_wrap(~metric, scales = "free") +
+  expand_limits(y = 0) +
+  theme(legend.position = "none")
+
+ggsave("MorganfacetFINAL.png")
+```
+
+```{r}
+nhl %>% 
+  filter(player == "KASPERI.KAPANEN")
+```
+
+
+

@@ -1,0 +1,380 @@
+---
+title: "evolvinghockeycharts"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(ggthemes)
+library(hrbrthemes)
+library(extrafont)
+library(showtext)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+pbp = read_csv('https://evolving-hockey.com/session/a324bd4f70832851775e568327c2c839/download/pbp_query_download?w=')
+```
+
+```{r}
+pbp %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "RASMUS.SANDIN" | home_on_2 == "RASMUS.SANDIN" | home_on_3 == "RASMUS.SANDIN" | home_on_4 == "RASMUS.SANDIN" | home_on_5 == "RASMUS.SANDIN" | home_on_6 == "RASMUS.SANDIN") | (away_on_1 == "RASMUS.SANDIN" | away_on_2 == "RASMUS.SANDIN" | away_on_3 == "RASMUS.SANDIN" | away_on_4 == "RASMUS.SANDIN" | away_on_5 == "RASMUS.SANDIN" | away_on_6 == "RASMUS.SANDIN")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Rasmus Sandin Heatmap", caption = "Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "sans", size = 18, margin=margin(0,0,30,0)))
+
+ggsave("sandin.pdf")
+```
+
+```{r}
+pbp %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "MARTIN.MARINCIN" | home_on_2 == "MARTIN.MARINCIN" | home_on_3 == "MARTIN.MARINCIN" | home_on_4 == "MARTIN.MARINCIN" | home_on_5 == "MARTIN.MARINCIN" | home_on_6 == "MARTIN.MARINCIN") | (away_on_1 == "MARTIN.MARINCIN" | away_on_2 == "MARTIN.MARINCIN" | away_on_3 == "MARTIN.MARINCIN" | away_on_4 == "MARTIN.MARINCIN" | away_on_5 == "MARTIN.MARINCIN" | away_on_6 == "MARTIN.MARINCIN")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Martin Marincin Heatmap", caption = "Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "sans", size = 18, margin=margin(0,0,30,0)))
+
+ggsave("marincin.pdf")
+```
+
+```{r}
+pbp %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "JUSTIN.HOLL" | home_on_2 == "JUSTIN.HOLL" | home_on_3 == "JUSTIN.HOLL" | home_on_4 == "JUSTIN.HOLL" | home_on_5 == "JUSTIN.HOLL" | home_on_6 == "JUSTIN.HOLL") | (away_on_1 == "JUSTIN.HOLL" | away_on_2 == "JUSTIN.HOLL" | away_on_3 == "JUSTIN.HOLL" | away_on_4 == "JUSTIN.HOLL" | away_on_5 == "JUSTIN.HOLL" | away_on_6 == "JUSTIN.HOLL")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Justin Holl Heatmap", caption = "Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "sans", size = 18, margin=margin(0,0,30,0)))
+
+ggsave("holl.pdf")
+```
+
+```{r}
+pp1819 = read_csv('https://evolving-hockey.com/session/a48a204165642607bfd0d6624d9bce4d/download/pbp_query_download?w=')
+pp1920 = read_csv('https://evolving-hockey.com/session/a48a204165642607bfd0d6624d9bce4d/download/pbp_query_download?w=')
+```
+```{r}
+pp1819 %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter(event_team == "TOR") %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ abs(coords_x),
+                                        event_team != "TOR" ~ -abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =8) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Leafs PP '18/'19", caption = "Data from Evolving Hockey")
+
+ggsave("pp18.pdf")
+
+```
+```{r}
+pp1920 %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter(event_team == "TOR") %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ abs(coords_x),
+                                        event_team != "TOR" ~ -abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =12) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Leafs PP '19/'20 Heatmap", caption = "Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "sans", size = 18, margin=margin(0,0,30,0)))
+
+ggsave("pp19.pdf")
+```
+```{r}
+
+
+
+pp1819 %>% 
+  rbind(pp1920) %>% 
+  filter(event_team == "TOR") %>% 
+  group_by(season, event_detail) %>% 
+  summarize(count = n()) %>% 
+  filter(event_detail != "2min" & !is.na(event_detail)) %>% 
+  mutate(total = sum(count)) %>% 
+  mutate(percent = (count/total)*100) %>% 
+  ungroup() %>% 
+  mutate(season = as.character(season)) %>%
+  mutate(season = ifelse(season == "20182019","2018-2019","2019-2020")) %>% 
+  ggplot(aes(reorder(event_detail,percent), percent)) +
+  geom_col(aes(fill = season)) +
+  coord_flip() +
+  facet_wrap(~season) +
+   theme_ipsum_ps(grid = "X") +
+  theme(legend.position = "none") +
+  scale_fill_tableau() +
+  geom_text(aes(label = paste0(round(percent),"%"), hjust = -0.05)) +
+  ylim(0,60) +
+  labs(title = "Changes in Shot type, Leafs Powerplay", subtitle = "As the Leafs change the tactics of their Powerplay to set up the one-timer, \nit appears that slapshots could become more prevalent.", y = "Percent of PP Shots", x = "", caption = "Data from EvolvingHockey, Chart by @MackinawStats")
+
+ggsave("ppchange.png")
+  
+```
+```{r}
+allsit1920 = read_csv('https://evolving-hockey.com/session/bb3ee990d08ff90968ab8e723d7bb6bd/download/pbp_query_download?w=')
+```
+```{r}
+allsit1920 %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "CODY.CECI" | home_on_2 == "CODY.CECI" | home_on_3 == "CODY.CECI" | home_on_4 == "CODY.CECI" | home_on_5 == "CODY.CECI" | home_on_6 == "CODY.CECI") | (away_on_1 == "CODY.CECI" | away_on_2 == "CODY.CECI" | away_on_3 == "CODY.CECI" | away_on_4 == "CODY.CECI" | away_on_5 == "CODY.CECI" | away_on_6 == "CODY.CECI")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Cody Ceci Heatmap", caption = "Chart by MackinawStats, Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "IBM Plex Sans", size = 18, margin=margin(0,0,15,0))) +
+  annotate(geom = "text",
+           x = 30, y = 47, size = 4,
+           label = "On-Ice Shots Against", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") +
+  annotate(geom = "text",
+           x = -80, y = 47, size = 4,
+           label = "On-Ice Shots For", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("ceci.pdf")
+```
+```{r}
+allsit1920 %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "RASMUS.SANDIN" | home_on_2 == "RASMUS.SANDIN" | home_on_3 == "RASMUS.SANDIN" | home_on_4 == "RASMUS.SANDIN" | home_on_5 == "RASMUS.SANDIN" | home_on_6 == "RASMUS.SANDIN") | (away_on_1 == "RASMUS.SANDIN" | away_on_2 == "RASMUS.SANDIN" | away_on_3 == "RASMUS.SANDIN" | away_on_4 == "RASMUS.SANDIN" | away_on_5 == "RASMUS.SANDIN" | away_on_6 == "RASMUS.SANDIN")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Rasmus Sandin Heatmap, All Situations", caption = "Chart by @MackinawStats, Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "IBM Plex Sans", size = 18, margin=margin(0,0,15,0))) +
+  annotate(geom = "text",
+           x = 30, y = 47, size = 4,
+           label = "On-Ice Shots Against", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") +
+  annotate(geom = "text",
+           x = -80, y = 47, size = 4,
+           label = "On-Ice Shots For", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("sandin.pdf")
+```
+```{r}
+fivevfive = read_csv('https://evolving-hockey.com/session/0a8310b7c2a51e2ef9da86e931ed1fc8/download/pbp_query_download?w=')
+```
+```{r}
+fivevfive %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "CODY.CECI" | home_on_2 == "CODY.CECI" | home_on_3 == "CODY.CECI" | home_on_4 == "CODY.CECI" | home_on_5 == "CODY.CECI" | home_on_6 == "CODY.CECI") | (away_on_1 == "CODY.CECI" | away_on_2 == "CODY.CECI" | away_on_3 == "CODY.CECI" | away_on_4 == "CODY.CECI" | away_on_5 == "CODY.CECI" | away_on_6 == "CODY.CECI")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Cody Ceci Heatmap, 5v5", caption = "Chart by MackinawStats, Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "IBM Plex Sans", size = 18, margin=margin(0,0,15,0))) +
+  annotate(geom = "text",
+           x = 30, y = 47, size = 4,
+           label = "On-Ice Shots Against", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") +
+  annotate(geom = "text",
+           x = -80, y = 47, size = 4,
+           label = "On-Ice Shots For", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("ceci2.pdf")
+```
+```{r}
+allsit1920 %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "MORGAN.RIELLY" | home_on_2 == "MORGAN.RIELLY" | home_on_3 == "MORGAN.RIELLY" | home_on_4 == "MORGAN.RIELLY" | home_on_5 == "MORGAN.RIELLY" | home_on_6 == "MORGAN.RIELLY") | (away_on_1 == "MORGAN.RIELLY" | away_on_2 == "MORGAN.RIELLY" | away_on_3 == "MORGAN.RIELLY" | away_on_4 == "MORGAN.RIELLY" | away_on_5 == "MORGAN.RIELLY" | away_on_6 == "MORGAN.RIELLY")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Morgan Reilly Heatmap, All Situations", caption = "Chart by @MackinawStats, Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "IBM Plex Sans", size = 18, margin=margin(0,0,15,0))) +
+  annotate(geom = "text",
+           x = 30, y = 47, size = 4,
+           label = "On-Ice Shots Against", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") +
+  annotate(geom = "text",
+           x = -80, y = 47, size = 4,
+           label = "On-Ice Shots For", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("reillyall.pdf")
+
+fivevfive %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "MORGAN.RIELLY" | home_on_2 == "MORGAN.RIELLY" | home_on_3 == "MORGAN.RIELLY" | home_on_4 == "MORGAN.RIELLY" | home_on_5 == "MORGAN.RIELLY" | home_on_6 == "MORGAN.RIELLY") | (away_on_1 == "MORGAN.RIELLY" | away_on_2 == "MORGAN.RIELLY" | away_on_3 == "MORGAN.RIELLY" | away_on_4 == "MORGAN.RIELLY" | away_on_5 == "MORGAN.RIELLY" | away_on_6 == "MORGAN.RIELLY")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  geom_point() +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Morgan Reilly Heatmap, 5v5", caption = "Chart by MackinawStats, Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "IBM Plex Sans", size = 18, margin=margin(0,0,15,0))) +
+  annotate(geom = "text",
+           x = 30, y = 47, size = 4,
+           label = "On-Ice Shots Against", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") +
+  annotate(geom = "text",
+           x = -80, y = 47, size = 4,
+           label = "On-Ice Shots For", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+
+ggsave("reillyfive.pdf")
+```
+```{r}
+fivevfive %>% 
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS" | event_type == "BLOCK") %>% 
+  filter((home_on_1 == "MORGAN.RIELLY" | home_on_2 == "MORGAN.RIELLY" | home_on_3 == "MORGAN.RIELLY" | home_on_4 == "MORGAN.RIELLY" | home_on_5 == "MORGAN.RIELLY" | home_on_6 == "MORGAN.RIELLY") | (away_on_1 == "MORGAN.RIELLY" | away_on_2 == "MORGAN.RIELLY" | away_on_3 == "MORGAN.RIELLY" | away_on_4 == "MORGAN.RIELLY" | away_on_5 == "MORGAN.RIELLY" | away_on_6 == "MORGAN.RIELLY")) %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ -abs(coords_x),
+                                        event_team != "TOR" ~ abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  ggplot(aes(coords_x,coords_y)) +
+  stat_density2d(aes(fill = ..level..), geom = 'polygon', h =17) +
+  geom_point() +
+  scale_fill_viridis(option = "plasma") +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  theme(legend.position = "none") +
+  labs(title = "Morgan Reilly Heatmap, 5v5", caption = "Chart by MackinawStats, Data from Evolving Hockey") +
+  theme(plot.title = element_text(family = "IBM Plex Sans", size = 18, margin=margin(0,0,15,0))) +
+  annotate(geom = "text",
+           x = 30, y = 47, size = 4,
+           label = "On-Ice Shots Against", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none") +
+  annotate(geom = "text",
+           x = -80, y = 47, size = 4,
+           label = "On-Ice Shots For", hjust = 0, family = "IBM Plex Sans") +
+  theme(legend.position = "none")
+```
+
+

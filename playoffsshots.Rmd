@@ -1,0 +1,89 @@
+---
+title: "playoffs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+playoffs1718 = read_csv("playoffs1718.csv") %>% 
+  filter(game_id == "30121" | game_id == "30122"| game_id == "30123"| game_id == "30124" | game_id == "30125"| game_id == "30126"| game_id == "30127") %>% 
+  select(shotID, season, game_id, event,xGoal, teamCode, shooterName)
+
+playoffs1819 = read_csv("playoffs1819.csv") %>% 
+  filter(game_id == "30121" | game_id == "30122"| game_id == "30123"| game_id == "30124" | game_id == "30125"| game_id == "30126"| game_id == "30127") %>% 
+  select(shotID, season, game_id, event,xGoal, teamCode, shooterName)
+
+playoff = rbind(playoffs1819, playoffs1718)
+```
+
+```{r}
+leafs = filter(playoff, teamCode == "TOR") %>% 
+  mutate(game = case_when(game_id == 30121 ~ "1", 
+                          game_id == 30122 ~ "2",
+                          game_id == 30123 ~ "3",
+                          game_id == 30124 ~ "4",
+                          game_id == 30125 ~ "5",
+                          game_id == 30126 ~ "6",
+                          game_id == 30127 ~ "7",
+                          TRUE ~ as.character(game_id)))
+bruins = filter(playoff, teamCode == "BOS") %>% 
+  mutate(game = case_when(game_id == 30121 ~ "1", 
+                          game_id == 30122 ~ "2",
+                          game_id == 30123 ~ "3",
+                          game_id == 30124 ~ "4",
+                          game_id == 30125 ~ "5",
+                          game_id == 30126 ~ "6",
+                          game_id == 30127 ~ "7",
+                          TRUE ~ as.character(game_id)))
+
+playoff %>%
+  mutate(game_id = as.numeric(game_id)) %>% 
+  mutate(game = case_when(game_id == 30121 ~ "1", 
+                          game_id == 30122 ~ "2",
+                          game_id == 30123 ~ "3",
+                          game_id == 30124 ~ "4",
+                          game_id == 30125 ~ "5",
+                          game_id == 30126 ~ "6",
+                          game_id == 30127 ~ "7",
+                          TRUE ~ as.character(game_id))) %>% 
+  filter(season =="2018") %>% 
+  ggplot(aes(game,xGoal, color = teamCode)) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  theme(legend.position = "none") +
+  theme_fivethirtyeight()
+
+
+
+```
+
+
+team = filter(fivecf, team == "TOR")
+
+fivecf %>%
+  ggplot(aes(season,avgcf)) +
+  geom_quasirandom(dodge.width = 1, alpha = 0.1) +
+  geom_point(data = team, color = "#003E7E", size = 2, alpha = 1) +
+  geom_line(data = team, alpha = 0.5, linetype = 'dashed') +
+  scale_x_continuous(breaks=c(2008:2018)) +
+  theme_fivethirtyeight() +
+  labs(x = "Season", y="Corsi Percentage", title = "Corsi Percentage since 2008", subtitle = "Data from Moneypuck.com")

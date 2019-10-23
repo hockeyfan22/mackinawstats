@@ -1,0 +1,88 @@
+---
+title: "matthews"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rtweet)
+library(tidyverse)
+library(pageviews)
+
+matthews = article_pageviews(project = "en.wikipedia", article = "Auston Matthews"
+  , start = as.Date('2016-06-26'), end = as.Date("2019-09-18")
+  , user_type = c("user")) %>% 
+  select(article, date, views)
+
+marner = article_pageviews(project = "en.wikipedia", article = "Mitch Marner"
+  , start = as.Date('2015-06-26'), end = as.Date("2019-09-18")
+  , user_type = c("user")) %>% 
+  select(article, date, views)
+
+nylander = article_pageviews(project = "en.wikipedia", article = "William Nylander"
+  , start = as.Date('2014-06-26'), end = as.Date("2019-09-18")
+  , user_type = c("user")) %>% 
+  select(article, date, views)
+
+tavares = article_pageviews(project = "en.wikipedia", article = "John Tavares"
+  , start = as.Date('2018-07-01'), end = as.Date("2019-09-18")
+  , user_type = c("user")) %>% 
+  select(article, date, views)
+
+```
+
+```{r}
+matthews %>% 
+  rbind(marner) %>% 
+  rbind(nylander) %>% 
+  rbind(tavares) %>% 
+  mutate(month = floor_date(date, "month")) %>% 
+  group_by(article,month) %>% 
+  summarize(sum = sum(views)) %>% 
+  ungroup() %>%
+  mutate(article = gsub("_", " ", article, fixed=TRUE)) %>% 
+  ggplot(aes(month,sum, group = article, color = article)) +
+  geom_line(size = 1.5) +
+  scale_y_log10(labels = scales::comma) +
+  ggthemes::theme_fivethirtyeight() +
+  labs(title = "The Most Popular Leafs by Wikipedia page views", x = "Date", subtitle = "Wikipedia page views from players' Leafs introduction", caption = "Chart by @MackinawStats") +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "top", legend.spacing.x = unit(0.25, 'cm')) +
+  theme(axis.title = element_text()) + ylab('Wikipedia Page Views')
+```
+
+```{r}
+library(awtools)
+library(sysfonts)
+library(showtext)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+matthews %>% 
+  rbind(marner) %>% 
+  rbind(nylander) %>% 
+  rbind(tavares) %>% 
+  mutate(month = floor_date(date, "month")) %>% 
+  group_by(article,month) %>% 
+  summarize(sum = sum(views)) %>% 
+  ungroup() %>%
+  mutate(article = gsub("_", " ", article, fixed=TRUE)) %>% 
+  ggplot(aes(month,sum, group = article, color = article)) +
+  geom_line(size = 1.5) +
+  scale_y_log10(labels = scales::comma) +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "The Most Popular Leafs by Wikipedia page views", x = "Date", subtitle = "Wikipedia page views from players' Leafs introduction. Auston Matthews was orginally the most popular, \nskyrocketing to over 100,000 views shortly after his debut. Since then, the core has converged to a similar viewership. \nIn the most recent month, Marner led in page views, followed by Matthews, Tavares, and Nylander.", caption = "Chart by @MackinawStats") +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "top", legend.spacing.x = unit(0.25, 'cm')) +
+  theme(axis.title = element_text()) + ylab('Wikipedia Page Views')
+
+```
+

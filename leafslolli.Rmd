@@ -1,0 +1,51 @@
+---
+title: "Leafs lolli's"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+nhl = read_csv("evolvinghockeydata.csv") %>% 
+  filter(GP>20)
+```
+```{r}
+nhl %>% 
+  filter(position == "F") %>% 
+  mutate(P_60mean = mean(Points_60)) %>% 
+  filter(Team == "TOR") %>% 
+  mutate(indicator = ifelse(Points_60>P_60mean, "above", "below")) %>% 
+  mutate(player = fct_reorder(player, Points_60)) %>% 
+  ggplot(aes(Points_60, player)) +
+  geom_point(size = 4, aes(color = indicator)) +
+  geom_vline(aes(xintercept = P_60mean)) +
+  scale_color_fivethirtyeight() +
+  geom_segment(aes(y = player, yend = player,
+                   x = P_60mean, xend = Points_60, color = indicator), size = 2) +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none") +
+  theme(axis.title = element_text()) + xlab('Points Per 60 Minutes') +
+  labs(title = "Points per 60 among Leafs forwards", subtitle = "Comparison to the league average, among those with GP>20", y = "")
+
+ggsave("P60lolli.png")
+```
+

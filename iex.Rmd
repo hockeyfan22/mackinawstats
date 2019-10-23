@@ -1,0 +1,44 @@
+---
+title: "iex"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(plotly)
+library(awtools)
+library(showtext)
+library(ggforce)
+library(ggridges)
+library(tidytext)
+library(rayshader)
+library(rgl)
+library(haven)
+
+
+iex = haven::read_spss("US3003961.sav")
+```
+```{r}
+iex
+```
+

@@ -1,0 +1,59 @@
+---
+title: "bookings"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(ggbeeswarm)
+
+bookings = read_csv("Booking Database Report1.csv")
+```
+```{r}
+bookings %>% 
+  group_by(Created_By) %>% 
+  mutate(meanmoney = mean(Initial_Booked_Value___Local_Currency)) %>% 
+  ungroup() %>% 
+  mutate(Created_By = fct_reorder(Created_By,meanmoney)) %>% 
+  ggplot(aes(Initial_Booked_Value___Local_Currency,Created_By)) +
+  geom_point(aes(color = Created_By, size = Initial_Booked_Value___Local_Currency, alpha = 0.4)) +
+  theme_fivethirtyeight() +
+  labs(title = "Bookings, 2019 to date") +
+  theme(legend.position = "none")+
+  scale_size_continuous(name="area", range = c(1,20))
+```
+```{r}
+bookings %>% 
+  mutate(Line_of_Business = case_when(Line_of_Business == "Preferred Access" ~ "Strategy", TRUE ~ Line_of_Business)) %>% 
+  group_by(Line_of_Business) %>% 
+  mutate(meanmoney = mean(Initial_Booked_Value___Local_Currency)) %>% 
+  ungroup() %>% 
+  mutate(Line_of_Business = fct_reorder(Line_of_Business, meanmoney)) %>% 
+  ggplot(aes(Initial_Booked_Value___Local_Currency, Line_of_Business)) +
+  geom_point(aes(color = Line_of_Business, size = Initial_Booked_Value___Local_Currency, alpha = 0.4)) +
+  theme_fivethirtyeight() +
+  labs(title = "Bookings, 2019 to date", subtitle = "by Line of Business") +
+  theme(legend.position = "none")+
+  scale_size_continuous(name="area", range = c(1,15))
+```
+

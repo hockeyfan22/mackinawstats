@@ -1,0 +1,229 @@
+---
+title: "testrink"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(fuzzyjoin)
+library(stringr)
+library(ggthemes)
+library(ggrepel)
+library(extrafont)
+library(hrbrthemes)
+library(xkcd)
+library(cowplot)
+library(magick)
+library(zoo)
+library(gganimate)
+library(ggimage)
+library(beeswarm)
+library(DescTools)
+library(ggbeeswarm)
+library(plotly)
+library(gganimate)
+
+nhl = read_csv("testleafs.csv") %>% 
+  mutate(arenaAdjustedXCord = case_when(teamCode == "TOR" ~ abs(arenaAdjustedXCord),
+                                        teamCode == "MTL" ~ -abs(arenaAdjustedXCord),
+                                        TRUE ~ arenaAdjustedXCord)) %>% 
+  mutate(arenaAdjustedYCord = arenaAdjustedYCord * -1)
+```
+
+```{r}
+nhl %>% 
+  dplyr::summarize(max = max(arenaAdjustedYCord))
+```
+
+
+
+```{r}
+example = plotly_empty(nhl, x = ~arenaAdjustedXCord, y=~arenaAdjustedYCord, colors = c("red", "blue"))  %>% 
+  add_markers(size = ~xGoal,alpha = 0.75, color = ~factor(teamCode)) %>%
+    layout(
+      xaxis = list(range = c(-100, 100), title = ""), 
+      yaxis = list(range = c(-40, 40), title = ""),
+      images= list(
+        list(
+          source= "https://i.imgur.com/Y2kOUX5.png",
+          xref= "x",
+          yref= "y",
+          x = 0,
+          y = 0,
+          sizex = 200,
+          sizey = 90,
+          opacity = 0.8,
+          layer = "below",
+          xanchor = "center",
+          yanchor = "middle"
+        )
+      )
+    )
+
+example
+
+
+```
+
+```{r}
+api_create(example, filename = "ice")
+```
+
+
+```{r}
+example = plotly_empty(nhl, x = ~arenaAdjustedXCord, y=~arenaAdjustedYCord, colors = c("red", "blue"))  %>% 
+  add_markers(size = ~xGoal,alpha = 0.75, color = ~factor(teamCode)) %>%
+    layout(
+      xaxis = list(range = c(-100, 100), title = ""), 
+      yaxis = list(range = c(-45, 45), title = ""),
+      images= list(
+        list(
+          source= "https://i.imgur.com/Y2kOUX5.png",
+          xref= "x",
+          yref= "y",
+          x = 0,
+          y = 0,
+          sizex = 200,
+          sizey = 90,
+          opacity = 0.8,
+          layer = "below",
+          xanchor = "center",
+          yanchor = "middle"
+        )
+      )
+    )
+example
+
+api_create(example, filename = "ice2")
+```
+
+
+```{r}
+plotly_empty(nhl, x = ~arenaAdjustedXCord, y=~arenaAdjustedYCord, colors = c("red", "blue"))  %>% 
+  add_markers(size = ~xGoal, alpha = 0.75, color = ~factor(teamCode)) %>%
+    layout(
+      xaxis = list(range = c(-100, 100), title = ""), 
+      yaxis = list(range = c(-45, 45), title = ""),
+      images= list(
+        list(
+          source= "https://i.imgur.com/Y2kOUX5.png",
+          xref= "x",
+          yref= "y",
+          x = 0,
+          y = 0,
+          sizex = 200,
+          sizey = 90,
+          opacity = 0.8,
+          layer = "below",
+          xanchor = "center",
+          yanchor = "middle"
+        )
+      )
+    )
+```
+
+```{r}
+#BEST VERSION SO FAR
+ex2 = plotly_empty(nhl, x = ~arenaAdjustedXCord, y=~arenaAdjustedYCord, colors = c("red", "blue"))  %>% 
+  add_markers(size = ~xGoal, alpha = 0.75, color = ~factor(teamCode)) %>%
+    layout(
+      xaxis = list(range = c(-100, 100), title = ""), 
+      yaxis = list(range = c(-100, 100), title = ""),
+      images= list(
+        list(
+          source= "https://i.imgur.com/Y2kOUX5.png",
+          xref= "x",
+          yref= "y",
+          x = 0,
+          y = 0,
+          sizex = 200,
+          sizey = 200,
+          opacity = 0.8,
+          layer = "below",
+          xanchor = "center",
+          yanchor = "middle"
+        )
+      )
+    )
+ex2
+#api_create(ex2, filename = "ice3")
+```
+
+```{r}
+#THIS IS THE MONEYPUCK CHART - UNFINISHED
+moneypuckex = plotly_empty(nhl, x = ~arenaAdjustedXCord, y=~arenaAdjustedYCord, colors = c("red", "blue"))  %>% 
+  add_markers(size = ~xGoal, alpha = 0.75, color = ~factor(teamCode)) %>%
+    layout(
+      xaxis = list(range = c(-100, 100), title = ""), 
+      yaxis = list(range = c(-100, 100), title = ""),
+      images= list(
+        list(
+          source= "https://i.imgur.com/a7fCgP1.png",
+          xref= "x",
+          yref= "y",
+          x = 0,
+          y = 0,
+          sizex = 200,
+          sizey = 200,
+          opacity = 0.8,
+          layer = "below",
+          xanchor = "center",
+          yanchor = "middle"
+        )
+      )
+    )
+
+api_create(moneypuckex, filename = "ice4")
+```
+
+
+```{r}
+#TRYING TO DO A GGPLOT2 VERSION 
+
+rink <- image_read("rink.png") 
+
+plot = nhl %>% 
+  ggplot(aes(x = arenaAdjustedXCord, y=arenaAdjustedYCord, group = teamCode, color = teamCode, size = xGoal)) +
+  geom_point(alpha = 0.8) +
+  theme(legend.position = "none") +
+  theme(line = element_blank(),
+        text = element_blank(),
+        title = element_blank())
+
+ggdraw() +
+  draw_image(rink, height = 1.2, y = -0.15) +
+  draw_plot(plot)
+
+```
+
+```{r}
+goals = nhl %>% 
+  filter(event == "GOAL")
+
+nhl %>% 
+  ggplot(aes(arenaAdjustedXCord, arenaAdjustedYCord, size =xGoal)) +
+  geom_point(aes(color = teamCode), alpha = 0.6) +
+  gg_rink(side = "right") +
+  gg_rink(side = "left") +
+  labs(title = "Leafs vs MTL, October 3rd", subtitle = "Data from Moneypuck.com", x = "", y = "") +
+  scale_color_manual(values = c("red", "#00205B")) +
+  theme(legend.position = "none") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+   theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) + 
+  transition_time(shotID) +
+  shadow_mark()
+
+anim_save("Leafs.gif")
+```
+
