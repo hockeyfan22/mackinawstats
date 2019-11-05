@@ -1,0 +1,89 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+age = read_csv("historicwithagegrouped.csv")
+
+library(gganimate)
+```
+
+```{r}
+anim = age %>% 
+  mutate(Season = case_when(Season == "07-08" ~ 2008,
+                            Season == "08-09" ~ 2009,
+                            Season == "09-10" ~ 2010,
+                            Season == "10-11" ~ 2011,
+                            Season == "11-12" ~ 2012,
+                            Season == "12-13" ~ 2013,
+                            Season == "13-14" ~ 2014,
+                            Season == "14-15" ~ 2015,
+                            Season == "15-16" ~ 2016,
+                            Season == "16-17" ~ 2017,
+                            Season == "17-18" ~ 2018,
+                            Season == "18-19" ~ 2019,
+                            Season == "19-20" ~ 2020,)) %>% 
+  filter(Season!=2020) %>% 
+  mutate(ppg = Points/GP) %>% 
+  mutate(youngpoints = ifelse(Season_Age<26, ppg, 0)) %>%
+  group_by(Season, Team) %>% 
+  summarize(Age = mean(Season_Age),
+            youngpoints = mean(youngpoints)) %>% 
+  ggplot(aes(Age,youngpoints)) +
+  geom_point(aes(color = Team), size = 5, alpha = 0.5) +
+  scale_x_reverse() +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  transition_time(Season) +
+  ease_aes('linear') +
+  labs(title = 'Year: {round(frame_time)}')
+
+animate(anim, end_pause = 30, fps = 500)
+```
+
+```{r}
+anim2 = age %>% 
+  mutate(Season = case_when(Season == "07-08" ~ 2008,
+                            Season == "08-09" ~ 2009,
+                            Season == "09-10" ~ 2010,
+                            Season == "10-11" ~ 2011,
+                            Season == "11-12" ~ 2012,
+                            Season == "12-13" ~ 2013,
+                            Season == "13-14" ~ 2014,
+                            Season == "14-15" ~ 2015,
+                            Season == "15-16" ~ 2016,
+                            Season == "16-17" ~ 2017,
+                            Season == "17-18" ~ 2018,
+                            Season == "18-19" ~ 2019,
+                            Season == "19-20" ~ 2020,)) %>% 
+  filter(Season!=2020) %>% 
+  mutate(youngpoints = ifelse(Season_Age<25, Points, 0)) %>%
+  group_by(Season, Team) %>% 
+  mutate(totalpoints = sum(Points)) %>% 
+  summarize(Age = mean(Season_Age),
+            youngpoints = sum(youngpoints),
+            max = max(totalpoints)) %>% 
+  mutate(percentyoung = round(youngpoints/max,2)) %>% 
+  ggplot(aes(Age,percentyoung)) +
+  geom_hline(yintercept = c(.2,.4,.6), color = "grey") +
+  geom_point(aes(color = Team), size = 5, alpha = 0.5) +
+  scale_x_reverse() +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  transition_time(Season) +
+  ease_aes('linear') +
+  labs(title = 'Age vs. Contribution', subtitle = 'Year: {round(frame_time)}', caption = 'Chart by @Mackinawstats', x = "Average Age", y = "% of Points from <25 Year Olds") +
+  scale_y_continuous(labels = scales::percent)
+
+animate(anim2, end_pause = 30, fps = 1000, nframes = 150)
+anim_save("age.gif")
+
+
+```
+
+

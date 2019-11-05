@@ -1,0 +1,161 @@
+---
+title: "Untitled"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(jsonlite)
+library(tidyverse)
+library(chron)
+library(lubridate)
+library(awtools)
+library(showtext)
+library(extrafont)
+library(hms)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+data = fromJSON("http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId=2019020163")
+
+shifts = as.tibble(data[[1]])
+
+```
+```{r}
+shifts %>% 
+  filter(teamName == "Toronto Maple Leafs") %>% 
+  mutate(end= as.numeric(as.period(ms(endTime), unit = "sec"))) %>% 
+  mutate(start= as.numeric(as.period(ms(startTime), unit = "sec"))) %>% 
+  mutate(end = case_when(period == 1 ~ end *1,
+                         period == 2 ~ end *2,
+                         period == 3 ~ end *3)) %>% 
+  mutate(start = case_when(period == 1 ~ start *1,
+                         period == 2 ~ start *2,
+                         period == 3 ~ start *3)) %>% 
+  mutate(name = paste(firstName, lastName)) %>% 
+  mutate(end = end/60,
+         start = start/60) %>% 
+  ggplot() +
+  geom_vline(xintercept = c(0,20,40,60), alpha = 0.2) +
+  geom_segment(
+    aes(
+      x = start, xend = end, y = name, yend = name), size = 3, color = "#00205B") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Maple Leafs Shift Chart vs. MTL", subtitle = "Data from NHL.com", caption = "Chart by @MackinawStats")
+```
+
+
+```{r}
+data = fromJSON("http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId=2019020209")
+
+shifts = as.tibble(data[[1]])
+```
+```{r}
+shifts %>% 
+  mutate(name = paste(firstName, lastName)) %>% 
+  mutate(duration = as.numeric(as.period(ms(duration), unit = "sec"))) %>% 
+  filter(teamName == "Toronto Maple Leafs") %>% 
+  mutate(end= as.numeric(as.period(ms(endTime), unit = "sec"))) %>% 
+  mutate(start= as.numeric(as.period(ms(startTime), unit = "sec"))) %>% 
+  mutate(end = case_when(period == 1 ~ end *1,
+                         period == 2 ~ end + 1200,
+                         period == 3 ~ end +2400,
+                         period == 4 ~ end + 3600)) %>% 
+  mutate(start = case_when(period == 1 ~ start *1,
+                         period == 2 ~ start + 1200,
+                         period == 3 ~ start + 2400,
+                         period == 4 ~ start + 3600)) %>% 
+  mutate(end = end/60,
+         start = start/60) %>% 
+  group_by(name) %>% 
+  mutate(toi = sum(duration)) %>% 
+  ungroup() %>% 
+  mutate(name = fct_reorder(name,toi, .fun = max)) %>% 
+  ggplot() +
+  geom_vline(xintercept = c(0,20,40,60), alpha = 0.2) +
+  geom_segment(
+    aes(
+      x = start, xend = end, y = name, yend = name), size = 3, color = "#00205B") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Maple Leafs Shift Chart vs. PHI", subtitle = "Data from NHL.com", caption = "Chart by @MackinawStats", x = "Minutes", y = "")
+
+ggsave("shiftchart.pdf")
+```
+```{r}
+forwards = c('Marner', 'Kapanen','Spezza','Johnsson','Matthews','Nylander','Mikheyev','Kerfoot','Moore','Shore','Gauthier', 'Timashov')
+
+shifts %>% 
+  filter(lastName %in% forwards) %>% 
+  mutate(name = paste(firstName, lastName)) %>% 
+  mutate(duration = as.numeric(as.period(ms(duration), unit = "sec"))) %>% 
+  filter(teamName == "Toronto Maple Leafs") %>% 
+  mutate(end= as.numeric(as.period(ms(endTime), unit = "sec"))) %>% 
+  mutate(start= as.numeric(as.period(ms(startTime), unit = "sec"))) %>% 
+  mutate(end = case_when(period == 1 ~ end *1,
+                         period == 2 ~ end + 1200,
+                         period == 3 ~ end +2400,
+                         period == 4 ~ end + 3600)) %>% 
+  mutate(start = case_when(period == 1 ~ start *1,
+                         period == 2 ~ start + 1200,
+                         period == 3 ~ start + 2400,
+                         period == 4 ~ start + 3600)) %>% 
+  mutate(end = end/60,
+         start = start/60) %>% 
+  group_by(name) %>% 
+  mutate(toi = sum(duration)) %>% 
+  ungroup() %>% 
+  mutate(name = fct_reorder(name,toi, .fun = max)) %>% 
+  ggplot() +
+  geom_vline(xintercept = c(0,20,40,60), alpha = 0.2) +
+  geom_segment(
+    aes(
+      x = start, xend = end, y = name, yend = name), size = 3, color = "#00205B") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Maple Leafs Shift Chart vs. PHI", subtitle = "Data from NHL.com", caption = "Chart by @MackinawStats", x = "Minutes", y = "")
+
+ggsave("shiftchartf.pdf")
+
+defensemen = c('Rielly','Ceci','Barrie', 'Holl','Marincin','Dermott')
+
+shifts %>% 
+  filter(lastName %in% defensemen) %>% 
+  mutate(name = paste(firstName, lastName)) %>% 
+  mutate(duration = as.numeric(as.period(ms(duration), unit = "sec"))) %>% 
+  filter(teamName == "Toronto Maple Leafs") %>% 
+  mutate(end= as.numeric(as.period(ms(endTime), unit = "sec"))) %>% 
+  mutate(start= as.numeric(as.period(ms(startTime), unit = "sec"))) %>% 
+  mutate(end = case_when(period == 1 ~ end *1,
+                         period == 2 ~ end + 1200,
+                         period == 3 ~ end +2400,
+                         period == 4 ~ end + 3600)) %>% 
+  mutate(start = case_when(period == 1 ~ start *1,
+                         period == 2 ~ start + 1200,
+                         period == 3 ~ start + 2400,
+                         period == 4 ~ start + 3600)) %>% 
+  mutate(end = end/60,
+         start = start/60) %>% 
+  group_by(name) %>% 
+  mutate(toi = sum(duration)) %>% 
+  ungroup() %>% 
+  mutate(name = fct_reorder(name,toi, .fun = max)) %>% 
+  ggplot() +
+  geom_vline(xintercept = c(0,20,40,60), alpha = 0.2) +
+  geom_segment(
+    aes(
+      x = start, xend = end, y = name, yend = name), size = 3, color = "#00205B") +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Maple Leafs Shift Chart vs. PHI", subtitle = "Data from NHL.com", caption = "Chart by @MackinawStats", x = "Minutes", y = "")
+
+ggsave("shiftchartd.pdf")
+```
+
