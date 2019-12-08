@@ -1,0 +1,82 @@
+---
+title: "Hockey Twitter Sentiment"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#load required packages
+
+library(rtweet)
+library(httpuv)
+library(tidyverse)
+library(tidytext)
+library(ggthemes)
+library(hrbrthemes)
+
+```
+
+```{r}
+
+leafs <- search_tweets(
+  "Leafs", n = 18000, include_rts = FALSE #Twitter rate limits cap results returned to 18,000 every 15 minutes.
+) %>%
+  mutate(date = as.Date(created_at)) #change created_at field to date object
+
+```
+
+```{r}
+
+#These steps are for historical tracking purposes only, as the API only pulls data within 7-10 days.
+write_csv(leafs, paste0(format(Sys.time(), "%d-%b-%Y %H.%M"), ".csv")) #write csv to the project
+
+files <- dir(pattern = "*.csv") #set pattern
+
+data <- files %>%
+  map_df(read_csv)   # read in all the files individually
+
+```
+
+```{r}
+#We'll want to remove any common fill words (the/and/of/etc.). We can do this by doing an anti_join with the stopwords tibble provided in the tidy text package. A few team names will be picked up as negative sentiment that I've added to a custom stopwords tibble - it's possible there are more that should be removed!
+
+stop_words_custom = tibble(word = c("wild", "avalanche"), lexicon = NA)
+
+stopwordsupdate = stop_words_custom %>% 
+  rbind(stop_words)
+
+
+```
+
+
+
+```{r}
+
+leafs %>% #change to data if you are tracking
+   unnest_tokens(word, text) %>% #makes each word its own observation for sentiment analysis
+  full_join(get_sentiments("bing")) %>% #join the data with sentiment journal for positive/negative designations
+  anti_join(stopwordsupdate) %>% #this will strip out common words and any ones we added above
+  mutate(sentiment = case_when(is.na(sentiment) ~ "neutral", TRUE ~ sentiment)) %>% #change NAs with no sentiment designation to neutral
+  group_by(date, sentiment) %>% #group by date and sentiment to get counts for each day
+  count() %>% 
+  filter(sentiment != "neutral") %>% #filter out neutrals
+  spread(key = sentiment, value = n) %>%
+  mutate(total = positive + negative) %>% 
+  mutate(net = positive - negative) %>% 
+  mutate(positivepercentage = round(net/total,2)) %>% 
+  ungroup() %>% 
+  mutate(mean = mean(positivepercentage)) %>% 
+  ggplot(aes(date, positivepercentage)) +
+  geom_hline(aes(yintercept = mean), color = "black", alpha = 0.6) +
+  geom_line(size = 1.75, color = "#ed713a") +
+  geom_point(fill = "white", size = 2.5, alpha = 0.9, height = 0.00, width = 0.1, shape = 21, stroke = 1.5, color = "black") +
+  theme_fivethirtyeight() +
+  labs(title = "Leafs Twitter Sentiment", subtitle = "Percent of Positive Words among 'Maple Leafs' Tweets", x = "Date", y = "Net Positivity Percent") +
+  theme(axis.title = element_text()) +
+  scale_y_continuous(limits = c(-0.4,.75), labels = scales::percent)
+
+```
+
