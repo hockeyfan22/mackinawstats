@@ -1,0 +1,44 @@
+---
+title: "contracts"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(chron)
+library(lubridate)
+```
+
+
+```{r}
+contracts = read_csv('contracts.csv')
+library(ggrepel)
+```
+```{r}
+contracts = contracts %>% 
+  filter(!is.na(TOI)) %>% 
+  mutate(Player = substring(PLAYER,4)) %>% 
+  mutate(cap = substring(`CAP HIT`,2)) %>% 
+  mutate(cap = as.numeric(gsub(",","",cap))) %>% 
+  mutate(cap = round(cap/1000000,2)) %>% 
+  mutate(P = as.numeric(P)) %>% 
+  mutate(p60 = TOI/60) %>% 
+  mutate(pointsper60 = round(P/p60,2)) 
+  
+```
+```{r}
+contracts %>% 
+ggplot(aes(cap,pointsper60)) +
+  geom_point(data = contracts %>% filter(pointsper60>2), color = "orange", size = 4, alpha = 0.8) +
+  geom_point(data = contracts %>% filter(pointsper60<2), color = "grey", size = 3, alpha = 0.6) +
+  a_plex_theme() +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Toronto Maple Leafs Point Bargains", subtitle = "Players above 2 P/P60 highlighted. Data from CapFriendly", caption = "Chart by @MackinawStats", y = "Points Per 60") +
+  geom_text_repel(data = contracts %>% filter(pointsper60>2), aes(label = Player), point.padding = 0.15, size = 3)
+
+ggsave("contracts.pdf")
+```
+

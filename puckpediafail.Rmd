@@ -1,0 +1,44 @@
+---
+title: "puckpedia"
+author: "Visualizing Hockey"
+date: "5/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(rvest)
+library(tidyverse)
+library(purrr)
+
+url = 'https://puckpedia.com/players?q=TU9JK7'
+
+webpage <- read_html("https://puckpedia.com/players?q=TU9JK7")
+
+tbls <- html_nodes(webpage, "table")
+```
+```{r}
+salaries <- webpage %>%
+        html_nodes("table") %>%
+        .[1] %>%
+        html_table(fill = TRUE)
+```
+
+```{r}
+get_salaries = function (url) {
+  url %>% 
+  read_html() %>% 
+    html_nodes("table") %>%
+        .[1] %>%
+        html_table(fill = TRUE) %>% 
+    .[[1]]
+}
+```
+
+```{r}
+get_salaries(url)
+```

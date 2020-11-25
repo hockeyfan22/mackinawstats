@@ -1,0 +1,223 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(awtools)
+library(ggthemes)
+library(hrbrthemes)
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+class = read_csv('ryanchartversion - A+C Blocks.csv')
+```
+
+```{r}
+#Word Counts
+class %>% 
+  ggplot(aes(`Word Count`)) +
+  geom_histogram(bins = 8, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Word Count Histogram", subtitle = "Total Population")
+
+ggsave('wordcountotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`Word Count`)) +
+  geom_histogram(bins = 5, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Word Count Histogram" ,subtitle = "Class A and Class B")
+
+ggsave('wordcountgroups.png')
+
+#Intro Score
+class %>% 
+  ggplot(aes(`INTRO SCORE`)) +
+  geom_histogram(bins = 3, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Intro Score Histogram", subtitle = "Total Population")
+ggsave('intrototal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`INTRO SCORE`)) +
+  geom_histogram(bins = 3, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Intro Score Histogram" ,subtitle = "Class A and Class B")
+ggsave('introgroups.png')
+
+#Body Score
+class %>% 
+  ggplot(aes(`BODY SCORE`)) +
+  geom_histogram(bins = 3, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Body Score Histogram", subtitle = "Total Population")
+ggsave('bodytotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`BODY SCORE`)) +
+  geom_histogram(bins = 3, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Body Score Histogram" ,subtitle = "Class A and Class B")
+ggsave('bodygroups.png')
+
+#Conclusion Score
+class %>% 
+  ggplot(aes(`CONCLUSION SCORE`)) +
+  geom_histogram(bins = 2, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Conclusion Score Histogram", subtitle = "Total Population")
+ggsave('conclusiontotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`CONCLUSION SCORE`)) +
+  geom_histogram(bins = 2, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Conclusion Score Histogram" ,subtitle = "Class A and Class B")
+ggsave('conclusiongroups.png')
+
+#Citations Score
+class %>% 
+  ggplot(aes(`CITATIONS SCORE`)) +
+  geom_histogram(bins = 3, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Citations Score Histogram", subtitle = "Total Population")
+ggsave('citationstotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`CITATIONS SCORE`)) +
+  geom_histogram(bins = 3, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Citations Score Histogram" ,subtitle = "Class A and Class B")
+ggsave('citationsgroup.png')
+
+#Total Score
+class %>% 
+  ggplot(aes(`TOTAL SCORE OUT OF 16`)) +
+  geom_histogram(bins = 6, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Total Score Histogram", subtitle = "Total Population")
+ggsave('totalscoretotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`TOTAL SCORE OUT OF 16`)) +
+  geom_histogram(bins = 6, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Total Score Histogram" ,subtitle = "Class A and Class B")
+ggsave('totalscoregroups.png')
+
+#Overall Average
+class %>% 
+  ggplot(aes(`OVERALL AVG`)) +
+  geom_histogram(bins = 6, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Overall Average Histogram", subtitle = "Total Population")
+ggsave('overallavgtotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`OVERALL AVG`)) +
+  geom_histogram(bins = 6, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Overall Overage Histogram" ,subtitle = "Class A and Class B")
+ggsave('overallavggroups.png')
+
+#Evidence from Sources
+class %>% 
+  ggplot(aes(`3 + Evidence (from sources)`)) +
+  geom_histogram(bins = 5, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Evidence from Sources Histogram", subtitle = "Total Population")
+ggsave('evidencetotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`3 + Evidence (from sources)`)) +
+  geom_histogram(bins = 5, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Evidence from Sources Histogram" ,subtitle = "Class A and Class B")
+ggsave('evidencegroups.png')
+
+#Analysis
+class %>% 
+  ggplot(aes(`Analysis 3+ (matching evidence)`)) +
+  geom_histogram(bins = 5, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  labs(title = "Analysis Matching Evidence Histogram", subtitle = "Total Population")
+ggsave('analysistotal.png')
+
+class %>%
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  ggplot(aes(`Analysis 3+ (matching evidence)`)) +
+  geom_histogram(bins = 5, fill = "navy blue", color = "white") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Analysis Matching Evidence Histogram" ,subtitle = "Class A and Class B")
+ggsave('analysisgroups.png')
+
+class %>% 
+  mutate(Claim = case_when(`Claim?` == "Y" ~ "YES",
+                           `Claim?` == "N" ~ "NO",
+                           TRUE ~ `Claim?`)) %>% 
+  count(Claim) %>% 
+  filter(Claim == "YES" | Claim == "NO") %>% 
+  ggplot(aes(Claim,n)) +
+  geom_col(fill = "navy blue") +
+  theme_fivethirtyeight() +
+  labs(title = "Writing Claim", subtitle = "Total Population")
+ggsave('claimtotal.png')
+
+class %>% 
+  mutate(Class = case_when(Class == "A" ~ "Class A",
+                           Class == "C" ~ "Class B")) %>% 
+  mutate(Claim = case_when(`Claim?` == "Y" ~ "YES",
+                           `Claim?` == "N" ~ "NO",
+                           TRUE ~ `Claim?`)) %>% 
+  group_by(Class) %>% 
+  count(Claim) %>% 
+  filter(Claim == "YES" | Claim == "NO") %>% 
+  ggplot(aes(Claim,n)) +
+  geom_col(fill = "navy blue") +
+  theme_fivethirtyeight() +
+  facet_wrap(~Class) +
+  labs(title = "Writing Claim", subtitle = "Class A and Class B")
+ggsave('claimgroups.png')
+```
+

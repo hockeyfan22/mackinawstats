@@ -1,0 +1,157 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(ggtext)
+library(forcats)
+library(showtext)
+library(extrafont)
+library(awtools)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+#loading data
+members <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/members.csv')
+
+#tidy
+dfo <- members %>% 
+  filter(peak_name == "Everest") %>% 
+  group_by(sex, season, solo, died, year, oxygen_used) %>% 
+  summarize(n()) %>%
+  rename(numero = 'n()')
+
+dfof <- dfo %>% 
+  filter(year == 2015)
+
+#convert logical to factor
+dfo$oxygen_used <- as.factor(dfo$oxygen_used)
+
+#plot
+ggplot(dfo, aes(x = year, y = numero, fill = fct_rev(oxygen_used))) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  xlim(1924, 2019) +
+  scale_fill_manual(values= c("#393b44", "white"), labels = c("YES", "NO")) +
+  scale_y_continuous(position = "right", expand = c(0, 0)) +
+  theme_minimal() +
+  labs(title = "Everest, give me air!",
+       subtitle = "Every member of every expedition (failed or not) \nto the mount Everest, by Oxygen used or not",
+       x = "",
+       y = "members",
+       fill = "Oxygen?",
+       caption = "Data from The Himalayan Database | @LauraNavarroSol") +
+  theme(plot.background = element_rect(fill = "red", color = NA),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        plot.title = element_text(color = "white", size = 30, family = "Constantia", hjust = 0.11, vjust = -0.25),
+        plot.subtitle = element_text(color = "white", size = 12, family = "Leelawadee UI", hjust = 0.11, vjust = -0.30),
+        axis.text = element_text(size = 8, color = "white"),
+        axis.title.y = element_text(size = 8, color = "white", hjust = 0),
+        plot.caption = element_text(size = 8, color = "white"),
+        legend.title = element_text(size = 10)) +
+  annotate(
+    geom = "curve", x = 1947, y = 275, xend = 1951, yend = 55, 
+    curvature = .3, arrow = arrow(length = unit(2, "mm")), color = "#393b44"
+  ) +
+  annotate(geom = "text", x = 1925, y = 355, 
+           label = "Tom Bourdillon and Charles Evans \nused closed-circuit oxygen apparatus", 
+           hjust = "left", color = "#393b44", size = 3.5)
+
+
+ggsave("everest.png", height = 7, width =8, dpi = 300)
+```
+```{r}
+url = 'https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=20182019%20and%20seasonId%3E=20182019'
+
+jsonlite::fromJSON(url)
+```
+```{r}
+comp = as.data.frame(as.character(seq(1917,2019))) %>% 
+  select("year1" = `as.character(seq(1917, 2019))`) %>% 
+  mutate(year2 = as.character(seq(1918,2020))) %>% 
+  mutate(text = rep('https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C='),
+         text2 = rep('%20and%20seasonId%3E=')) %>% 
+  mutate(url = paste0(text,year1,year2,text2,year1,year2))
+
+urls = comp$url
+  
+```
+
+```{r}
+data_list = map(urls, jsonlite::fromJSON)
+```
+
+```{r}
+season = plyr::rbind.fill(lapply(data_list,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  unnest(cols = data)
+```
+
+```{r}
+season %>% 
+  group_by(seasonId) %>% 
+  summarize(Goals = sum(goalsFor),
+            GP = sum(gamesPlayed/2)) %>% 
+  mutate(Gpergame = Goals/GP) %>% 
+  mutate(seasonId = as.numeric(substr(seasonId, 5, 8))) %>% 
+  mutate(check = case_when(between(seasonId,1918,1942) ~ "Founding",
+                           between(seasonId,1943,1967) ~ "Original Six",
+                           between(seasonId,1968,2004) ~ "Expansion",
+                           between(seasonId,2005,2020) ~ "Cap Era")) %>%  
+  mutate(seasonId = as.character(seasonId)) %>% 
+  ggplot(aes(x = seasonId, y = Gpergame)) +
+  geom_bar(stat = "identity", alpha = 0.8, aes(fill = check)) +
+  scale_fill_manual(values = c("white", '#669788', '#598477','#4c7166')) +
+  scale_y_continuous(position = "right", expand = c(0, 0)) +
+  theme_minimal() +
+  labs(title = "Goals on the Rise?",
+       subtitle = "Historical Goals Per Game per NHL.com",
+       x = "",
+       y = "Goals Per Game",
+       caption = "Data from NHL.com | @MackinawStats") +
+  theme(plot.background = element_rect(fill = "#80bdab", color = NA),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        plot.title = element_text(color = "white", size = 30, family = "IBM Plex Sans", hjust = 0.11, vjust = -0.25),
+        plot.subtitle = element_text(color = "white", size = 12, family = "IBM Plex Sans", hjust = 0.11, vjust = -0.30),
+        axis.text = element_text(size = 8, color = "white"),
+        axis.title.y = element_text(size = 8, color = "white", hjust = 0),
+        plot.caption = element_text(size = 8, color = "white"),
+        legend.title = element_text(size = 10)) +
+  theme(legend.position = "none") +
+  scale_x_discrete(breaks = c(1918,1942,1967,2004,2020))
+
+ggsave('gpg.pdf', height = 5, width = 10)
+  
+```
+```{r}
+season %>% 
+  mutate(seasonId = as.numeric(substr(seasonId, 5, 8))) %>%
+  mutate(pointfill = case_when(pointPct>=.5 ~ "yes",
+                               pointPct<.5 ~ "no")) %>% 
+  mutate(teamFullName = fct_reorder(teamFullName,gamesPlayed, .fun = sum)) %>% 
+  ggplot(aes(seasonId,teamFullName, fill = pointfill)) +
+  geom_tile(width=0.9, height=0.9) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c( '#ed6663', '#43658b')) +
+  labs(x = "", y = "")
+
+ggsave('heat.pdf', width = 14, height = 9)
+```
+
+```{r}
+library(viridis)
+```
+

@@ -1,0 +1,133 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/7/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(gt)
+tuesdata <- tidytuesdayR::tt_load(2020, "36")
+
+country_sel <- c("China", "India", "United States", "Indonesia", "Mexico", "Pakistan")
+
+yield_data <- tuesdata$key_crop_yields %>%
+  janitor::clean_names() %>%
+  rename_all(~ str_remove(., "_tonnes_per_hectare")) %>%
+  select(entity:beans, -code) %>%
+  pivot_longer(cols = wheat:beans, names_to = "crop", values_to = "yield") %>%
+  rename(Country = entity)
+
+
+table_data <- yield_data %>%
+  filter(
+    year %in% c(2013, 2017),
+    crop == "potatoes",
+    Country %in% c(
+      country_sel, "Germany", "Brazil", "Ireland", "Lebanon", "Italy",
+      "Netherlands", "France", "Denmark", "El Salvador", "Denmark"
+    )
+  ) %>%
+  pivot_wider(names_from = year, values_from = yield)
+
+
+plot_bar <- function(data) {
+  data_range <- yield_data %>%
+    filter(
+      year %in% c(2013:2017),
+      crop == "potatoes",
+      Country %in% c(
+        country_sel, "Germany", "Brazil", "Ireland", "Lebanon", "Italy",
+        "Netherlands", "France", "Denmark", "El Salvador", "Denmark"
+      )
+    ) %>%
+    pull(yield) %>%
+    range()
+
+  yield_mean <- data %>%
+    summarize(yield = mean(yield))
+
+  col_pal <- scales::col_numeric(as.character(paletteer::paletteer_d("ggsci::blue_material", n = 9)),
+    domain = data_range
+  )(pull(yield_mean, yield))
+  yield_mean %>%
+    ggplot() +
+    geom_col(aes(x = 1, y = yield),
+      size = 5,
+      fill = col_pal, color = col_pal
+    ) +
+    coord_flip() +
+    theme_void() +
+    scale_y_continuous(limits = c(0, data_range[2])) +
+    theme(legend.position = "none")
+}
+
+
+bar_yields <- yield_data %>%
+  filter(
+    year %in% c(2013:2017),
+    crop == "potatoes",
+    Country %in% c(
+      country_sel, "Germany", "Brazil", "Ireland", "Lebanon", "Italy",
+      "Netherlands", "France", "Denmark", "El Salvador", "Denmark"
+    )
+  ) %>%
+  nest(yields = c(year, yield)) %>%
+  mutate(plot = map(yields, plot_bar))
+
+# BARPLOT
+
+table_data %>%
+  select(-crop) %>%
+  rowwise() %>%
+  mutate(
+    mean = mean(`2013`:`2017`),
+    ggplot = NA
+  ) %>%
+  gt() %>%
+  text_transform(
+    locations = cells_body(vars(ggplot)),
+    fn = function(x) {
+      map(bar_yields$plot, ggplot_image, height = px(15), aspect_ratio = 4)
+    }
+  ) %>%
+  cols_width(vars(ggplot) ~ px(100)) %>%
+  cols_label(
+    mean = "2013-2017",
+    ggplot = ""
+  ) %>%
+  fmt_number(2:4) %>%
+  tab_spanner(
+    label = "Potato
+    Yield in Tonnes/Hectare",
+    columns = c(2, 3)
+  ) %>%
+  tab_spanner(
+    label = "Average",
+    columns = 4
+  ) %>%
+  tab_style(
+    style = cell_text(color = "black", weight = "bold"),
+    locations = list(
+      cells_column_spanners(everything()),
+      cells_column_labels(everything())
+    )
+  ) %>%
+  tab_options(
+    row_group.border.top.width = px(3),
+    row_group.border.top.color = "black",
+    row_group.border.bottom.color = "black",
+    table_body.hlines.color = "white",
+    table.border.top.color = "white",
+    table.border.top.width = px(3),
+    table.border.bottom.color = "white",
+    table.border.bottom.width = px(3),
+    table_body.border.bottom.width = px(2),
+    table_body.border.bottom.color = "black",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(3)
+  ) %>%
+  tab_source_note("Table: @thomasmock | Data: OurWorldInData.org")
+```
+

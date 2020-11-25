@@ -1,0 +1,87 @@
+---
+title: "tableaugamesummaryallgames"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+pbp = read_csv('https://evolving-hockey.com/session/7be07fe1eac874a51a9fc1f3ac5f272a/download/pbp_query_download?w=', col_types = cols(home_on_7 = col_character(), away_on_7 = col_character()))
+```
+
+
+```{r}
+box = pbp %>% 
+  filter(!is.na(pred_goal)) %>% 
+  group_by(game_id) %>% 
+  mutate(non_event_team = case_when(event_team == away_team ~ home_team,
+                                    event_team == home_team ~ away_team)) %>% 
+  ungroup() %>% 
+  select(game_id,event_team,non_event_team, home_team, away_team, pred_goal,home_on_1,home_on_2,home_on_3,home_on_4,home_on_5,home_on_6,home_on_7,away_on_1,away_on_2,away_on_3,away_on_4,away_on_5,away_on_6,away_on_7) %>% 
+  gather(home_on_1,home_on_2,home_on_3,home_on_4,home_on_5,home_on_6,home_on_7,away_on_1,away_on_2,away_on_3,away_on_4,away_on_5,away_on_6,away_on_7, key = "key", value = "value") %>% 
+  mutate(key = str_sub(key,1,4)) %>% 
+  mutate(xGF = case_when(key == "home" & event_team == away_team ~ 0,
+                                key == "away" & event_team == home_team ~ 0,
+                                TRUE ~ pred_goal)) %>% 
+  mutate(xGA = case_when(key == "home" & event_team == away_team ~ pred_goal,
+                                key == "away" & event_team == home_team ~ pred_goal,
+                                TRUE ~ 0)) %>% 
+  filter(!is.na(value)) %>% 
+  mutate(team = case_when(key == "home" ~ home_team,
+                          key == "away" ~ away_team)) %>% 
+  group_by(value, game_id, team, home_team, away_team) %>% 
+  summarize(xGF = sum(xGF),
+            xGA = sum(xGA)) %>% 
+  mutate(sum = xGF + xGA) %>% 
+  mutate(`xGF%` = xGF/sum) %>% 
+  mutate(designation = case_when(team == home_team ~ "home",
+                                 team == away_team ~ "away"))
+
+write_csv(box, 'xgboxscore5.csv')
+
+
+```
+
+```{r}
+tab = pbp %>% 
+  filter(!is.na(pred_goal)) %>% 
+  group_by(game_id, event_team) %>% 
+  mutate(cum = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  mutate(goals = case_when(event_type == "GOAL" ~ cum,
+                           TRUE ~ 0)) %>% 
+  mutate(coords_x = case_when(event_team == away_team ~ abs(coords_x),
+                              event_team == home_team ~ -abs(coords_x),
+                              TRUE ~ coords_x)) %>% 
+  mutate(goalcount = if_else(event_type == "GOAL",1,0)) %>% 
+  mutate(homeaway = case_when(event_team == home_team ~ "home",
+                              event_team == away_team ~ "away"))
+
+write_csv(tab, "tab5.csv")
+```
+```{r}
+points = pbp %>% 
+  filter(event_type == "GOAL") %>%
+  gather(event_player_1, event_player_2, event_player_3, key = "key", value = "value") %>% 
+  mutate(Goals = case_when(key == "event_player_1" ~ 1,
+                           TRUE ~ 0)) %>% 
+  mutate(Assists = case_when(key == "event_player_2" | key == "event_player_3" ~ 1,
+                             TRUE ~ 0)) %>% 
+  mutate(Points = Goals + Assists) %>% 
+  group_by(value,game_id, event_team, home_team, away_team) %>% 
+  summarize(Goals = sum(Goals),
+            Assists = sum(Assists),
+            Points = sum(Points)) %>% 
+  mutate(homewaway = case_when(event_team == home_team ~ "home",
+                               event_team == away_team ~ "away")) %>% 
+  filter(!is.na(value))
+
+write_csv(points, "pointsbox7.csv")
+```
+

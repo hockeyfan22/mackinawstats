@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "4/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+prepost = read_csv('Pre & Post Assessment - A+C Blocks (1).csv') %>% 
+  filter(!is.na(Name))
+```
+
+```{r}
+preevidence = prepost$`PRE 3 + Evidence (from sources)`
+postevidence = prepost$`POST + Evidence (from sources)`
+```
+```{r}
+t.test(postevidence,preevidence, mu =0, alt = "two.sided", conf = 0.95, var.eq = T, paired = T)
+```
+
+```{r}
+preevidence2 = prepost$`PRE Analysis 3+ (matching evidence)`
+postevidence2 = prepost$`POST Analysis 3+ (matching evidence)`
+```
+```{r}
+t.test(postevidence2, preevidence2, mu =0, alt = "two.sided", conf = 0.95, var.eq = T, paired = T)
+```
+```{r}
+prepost
+```
+```{r}
+prepost %>% 
+  select( "Pieces of Evidence" = `PRE 3 + Evidence (from sources)`, "Analysis of Evidence" = `PRE Analysis 3+ (matching evidence)`) %>% 
+  ggplot(aes(`Pieces of Evidence`, `Analysis of Evidence`)) +
+  geom_jitter(size = 4, color = "cornflower blue") +
+  awtools::a_plex_theme() +
+  labs(title = "Evidence vs. Analysis, Pre")
+```
+```{r}
+prepost %>% 
+  select( "Pieces of Evidence" = `POST + Evidence (from sources)`, "Analysis of Evidence" = `POST + Evidence (from sources)`) %>% 
+  ggplot(aes(`Pieces of Evidence`, `Analysis of Evidence`)) +
+  geom_jitter(size = 4, color = "cornflower blue", width = 0.75) +
+  awtools::a_plex_theme() +
+  labs(title = "Evidence vs. Analysis, Post") +
+  ylim(0,6) +
+  xlim(0,7)
+```
+
+

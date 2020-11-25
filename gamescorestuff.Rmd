@@ -1,0 +1,203 @@
+---
+title: "gamescore"
+author: "Visualizing Hockey"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(curl)
+dates = read_csv('dates.csv')
+library(awtools)
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+```{r}
+dates2 = dates %>% 
+  select(Date) %>%
+  filter(Date!= "Total")
+```
+```{r}
+urls = dates2 %>% 
+  mutate(url = rep('https://api.hockeystatcards.com/webapi/get-games?date='),
+         end = rep('&y=1920&s=rs')) %>% 
+  mutate(full = paste0(url,Date,end)) %>% 
+  select(full)
+
+url_list = urls$full
+```
+
+```{r}
+all = map(url_list, jsonlite::fromJSON)
+```
+
+```{r}
+games = bind_rows(unlist(all, recursive = FALSE), .id = 'Col')
+```
+```{r}
+gamenum = games %>% 
+  filter(vis_team == "Toronto Maple Leafs" | home_team == "Toronto Maple Leafs") %>% 
+  mutate(gamenum = as.character(gamenum)) %>% 
+  select(gamenum) %>% 
+  mutate(url = rep('https://api.hockeystatcards.com/webapi/get-gamescore-card/'),
+         end = rep('?y=1920&s=rs')) %>% 
+  mutate(gamenum = paste0(url,gamenum,end))
+
+game_list = gamenum$gamenum
+```
+
+```{r}
+all_data = map(game_list, jsonlite::fromJSON)
+```
+
+```{r}
+all_data[c(1:70)]
+final = bind_rows(unlist(all_data, recursive = FALSE), .id = 'Col')
+```
+
+```{r}
+final = merged.data.frame = Reduce(function(...) merge(..., all=T), all_data)
+```
+
+```{r}
+final %>% 
+  group_by(playerData.Player) %>% 
+  mutate(sum = sum(as.numeric(playerData.GameScore))) %>% 
+  ungroup() %>% 
+  mutate(playerData.Player = fct_rev(fct_reorder(playerData.Player, sum))) %>% 
+  filter(playerData.team == "TOR") %>% 
+  mutate(gamescore = as.numeric(playerData.GameScore)) %>% 
+  mutate(color = case_when(gamescore>0 ~ "yes",
+                           TRUE ~ "no")) %>% 
+  ggplot(aes(x=gamescore)) +
+  geom_vline(xintercept = 0, color = "grey") +
+  geom_histogram(aes(fill = color), alpha = 0.4, color = NA) +
+  scale_fill_manual(values = c("red","#00205B")) +
+  facet_wrap(~playerData.Player) +
+  a_plex_theme() +
+  theme(legend.position = "none") +
+  labs(title = "Leafs Gamescore Histograms", subtitle = "Data from hockeystatcards.com", x= "Gamescore", y = "Count")
+
+ggsave('facets.pdf', width = 12, height = 12)
+```
+```{r}
+final %>% 
+  group_by(playerData.Player) %>% 
+  mutate(sum = sum(as.numeric(playerData.GameScore))) %>% 
+  ungroup() %>% 
+  mutate(playerData.Player = fct_rev(fct_reorder(playerData.Player, sum))) %>% 
+  filter(playerData.team == "TOR") %>% 
+  mutate(gamescore = as.numeric(playerData.GameScore)) %>% 
+  mutate(color = case_when(gamescore>0 ~ "yes",
+                           TRUE ~ "no")) %>% 
+  arrange(desc(gamescore))
+```
+```{r}
+tably = final %>% 
+  mutate(gamescore = as.numeric(playerData.GameScore),
+         TOI = as.numeric(playerData.TOI)) %>% 
+  filter(playerData.team == "TOR") %>% 
+  group_by(playerData.Player) %>% 
+  summarize(TOI = mean(TOI),
+            mean = mean(gamescore),
+            sd = sd(gamescore),
+            games = n()) %>% 
+  filter(games>10) %>% 
+  filter(mean>0) %>% 
+  mutate(consistency = sd/mean) %>% 
+  arrange(consistency) %>% 
+  select("Player" = playerData.Player, TOI, "Average GS" = mean, "St. Dev" = sd, "Consistency" = consistency) %>% 
+  mutate(TOI = round(TOI, 2),
+         `Average GS` = round(`Average GS`,2),
+         `St. Dev` = round(`St. Dev`,2),
+         `Consistency` = round(Consistency,2)) %>% 
+  gt() %>% 
+  data_color(
+    columns = 5, 
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::blue_material", n =3
+      ) %>% as.character(),
+      domain = NULL
+    )) %>% 
+  tab_source_note("TABLE: @MackinawStats | DATA: Hockeystatcards.com") %>%
+  tab_header(
+    title = md("**Leafs Consistency Rankings**"),
+    subtitle = "Based on GameScore rankings"
+  ) %>% 
+  tab_style(
+    style = list(
+      cell_text(
+        font = "IBM Plex Sans",
+        align = "center"
+      )
+    ),
+    locations = list(
+      cells_body(columns = vars(TOI, `Average GS`, `St. Dev`, `Consistency`))
+    )
+  ) %>%
+  # Style header font
+  gt::tab_style(
+    style = list(
+      cell_text(font = "IBM Plex Sans", weight = "bold")
+    ),
+    locations = list(
+      cells_column_labels(gt::everything())
+    )
+  ) %>%
+  # Adjust font of Player Column
+  tab_style(
+    style = list(
+      cell_text(font = "IBM Plex Sans")
+    ),
+    location = list(
+      cells_body(columns = vars(Player))
+    )
+  ) %>%
+  # Adjust title font
+  tab_style(
+    style = list(
+      cell_text(
+        font = "IBM Plex Sans",
+        align = "left"
+      )
+    ),
+    locations = list(
+      cells_title(groups = "title")
+    )
+  ) %>%
+  # Adjust sub-title font
+  tab_style(
+    style = list(
+      cell_text(
+        font = "IBM Plex Sans",
+        align = "left"
+      )
+    ),
+    locations = list(
+      cells_title(groups = "subtitle")
+    )
+  )
+
+gtsave(tably, "consistency.pdf")  
+```
+
+```{r}
+final %>% 
+  mutate(gamescore = as.numeric(playerData.GameScore),
+         TOI = as.numeric(playerData.TOI)) %>% 
+  filter(playerData.team == "TOR") %>% 
+  arrange(desc(gamescore))
+```
+
+

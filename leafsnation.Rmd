@@ -1,0 +1,440 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "8/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(awtools)
+
+library(showtext)
+library(extrafont)
+library(ggthemes)
+library(hrbrthemes)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+playoffs1 = read_csv('EH_game_log_tor_on-ice_all_playoffs_2020-08-24.csv')
+playoffs2 = read_csv('EH_game_log_tor_on-ice_all_playoffs_2020-08-24 (1).csv')
+playoffs3 = read_csv('EH_game_log_tor_on-ice_all_playoffs_2020-08-24 (2).csv')
+playoffs4 = read_csv('EH_game_log_tor_on-ice_all_playoffs_2020-08-24 (3).csv')
+
+playoffs = playoffs1 %>% 
+  rbind(playoffs2,playoffs3,playoffs4) %>% 
+  filter(Date != "Total")
+```
+```{r}
+playoffs %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(year = lubridate::year(Date)) %>% 
+  mutate(year = as.character(year)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, `CF%`)) +
+  geom_hline(yintercept = 50) +
+  geom_col(aes(fill = year)) +
+  a_plex_theme(grid = FALSE) +
+  scale_y_continuous(breaks = c(25,50,75), labels = c(25,50,75), limits = c(0,75)) +
+  labs(title = "CF%", subtitle = "All Situations Corsi For Percentage, Data from @EvolvingHockey", x="Game") +
+  theme(legend.position = "none") +
+  scale_fill_tableau()
+
+ggsave('playoffscf.pdf')
+```
+```{r}
+playoffs %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(year = lubridate::year(Date)) %>% 
+  mutate(year = as.character(year)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, `xGF%`)) +
+  geom_hline(yintercept = 50) +
+  geom_col(aes(fill = year)) +
+  a_plex_theme(grid = FALSE) +
+  scale_y_continuous(breaks = c(25,50,75), labels = c(25,50,75), limits = c(0,75)) +
+  labs(title = "xGF%", subtitle = "All Situations Expected Goals For Percentage, Data from @EvolvingHockey", x="Game") +
+  theme(legend.position = "none") +
+  scale_fill_tableau()
+
+ggsave('playoffsxgf.pdf')
+```
+```{r}
+playoffs %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(year = lubridate::year(Date)) %>% 
+  mutate(year = as.character(year)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, `C±`)) +
+  geom_col(aes(fill = year)) +
+  a_plex_theme(grid = FALSE) +
+  #scale_y_continuous(breaks = c(25,50,75), labels = c(25,50,75), limits = c(0,75)) +
+  labs(title = "Corsi +/-", subtitle = "All Situations Corsi +/-, Data from @EvolvingHockey", x="Game") +
+  theme(legend.position = "none") +
+  scale_fill_tableau()
+
+ggsave('playoffscorsi.pdf')
+```
+```{r}
+playoffs %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(year = lubridate::year(Date)) %>% 
+  mutate(year = as.character(year)) %>% 
+  mutate(game = row_number()) %>% 
+  ggplot(aes(game, `xG±`)) +
+  geom_col(aes(fill = year)) +
+  a_plex_theme(grid = FALSE) +
+  #scale_y_continuous(breaks = c(25,50,75), labels = c(25,50,75), limits = c(0,75)) +
+  labs(title = "xG +/-", subtitle = "All Situations Expected Goals +/-, Data from @EvolvingHockey", x="Game") +
+  theme(legend.position = "none") +
+  scale_fill_tableau()
+
+ggsave('playoffsxgdiff.pdf')
+```
+```{r}
+#PBP Data
+
+pbp1 = read_csv('EH_pbp_query_20162017_2020-08-24.csv')
+pbp2 = read_csv('EH_pbp_query_20172018_2020-08-24.csv')
+pbp3 = read_csv('EH_pbp_query_20182019_2020-08-24.csv')
+pbp4 = read_csv('EH_pbp_query_20192020_2020-08-24.csv')
+
+pbp = pbp1 %>% 
+  rbind(pbp2) %>% 
+  rbind(pbp3) %>% 
+  rbind(pbp4)
+```
+```{r}
+library(padr)
+goals= pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 6000) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2017 & event_type == "GOAL") %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2016030131 ~ "Game 1",
+                             game_id == 2016030132 ~ "Game 2",
+                             game_id == 2016030133 ~ "Game 3",
+                             game_id == 2016030134 ~ "Game 4",
+                             game_id == 2016030135 ~ "Game 5",
+                             game_id == 2016030136 ~ "Game 6"))
+
+pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 6000) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2017) %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2016030131 ~ "Game 1",
+                             game_id == 2016030132 ~ "Game 2",
+                             game_id == 2016030133 ~ "Game 3",
+                             game_id == 2016030134 ~ "Game 4",
+                             game_id == 2016030135 ~ "Game 5",
+                             game_id == 2016030136 ~ "Game 6")) %>% 
+  ggplot(aes(game_seconds, xG)) +
+  geom_vline(xintercept = c(20,40,60,80), color = "grey", alpha = 0.4) +
+  geom_hline(yintercept = c(0,1,2,3), color = "grey", alpha = 0.4)  +
+  geom_line(aes(color = event_team), size = 1.25) +
+  geom_point(data = goals, fill = "white", size = 2, shape = 21, stroke = 1.5, aes(color = event_team)) +
+  scale_color_manual(values = c("navy blue", "light grey")) +
+  facet_wrap(~game_id) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "Expected Goals vs. WSH", subtitle = "All Situations, Data from Evolving Hockey", x = "Minutes")
+
+ggsave('wsh.pdf', height = 10, width = 10)
+```
+```{r}
+goals= pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 3600) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2018 & event_type == "GOAL") %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2017030121 ~ "Game 1",
+                             game_id == 2017030122 ~ "Game 2",
+                             game_id == 2017030123 ~ "Game 3",
+                             game_id == 2017030124 ~ "Game 4",
+                             game_id == 2017030125 ~ "Game 5",
+                             game_id == 2017030126 ~ "Game 6",
+                             game_id == 2017030127 ~ "Game 7"))
+
+pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 3600) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2018) %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2017030121 ~ "Game 1",
+                             game_id == 2017030122 ~ "Game 2",
+                             game_id == 2017030123 ~ "Game 3",
+                             game_id == 2017030124 ~ "Game 4",
+                             game_id == 2017030125 ~ "Game 5",
+                             game_id == 2017030126 ~ "Game 6",
+                             game_id == 2017030127 ~ "Game 7")) %>% 
+  ggplot(aes(game_seconds, xG)) +
+  geom_vline(xintercept = c(20,40,60), color = "grey", alpha = 0.4) +
+  geom_hline(yintercept = c(0,1,2,3,4,5), color = "grey", alpha = 0.4)  +
+  geom_line(aes(color = event_team), size = 1.25) +
+  geom_point(data = goals, fill = "white", size = 2, shape = 21, stroke = 1.5, aes(color = event_team)) +
+  scale_color_manual(values = c("light grey", "navy blue")) +
+  facet_wrap(~game_id) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "Expected Goals vs. BOS", subtitle = "All Situations, Data from Evolving Hockey", x = "Minutes")
+
+ggsave('bos.pdf', height = 10, width = 10)
+```
+```{r}
+goals= pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 3600) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2019 & event_type == "GOAL") %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2018030121 ~ "Game 1",
+                             game_id == 2018030122 ~ "Game 2",
+                             game_id == 2018030123 ~ "Game 3",
+                             game_id == 2018030124 ~ "Game 4",
+                             game_id == 2018030125 ~ "Game 5",
+                             game_id == 2018030126 ~ "Game 6",
+                             game_id == 2018030127 ~ "Game 7"))
+
+pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 3600) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2019) %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2018030121 ~ "Game 1",
+                             game_id == 2018030122 ~ "Game 2",
+                             game_id == 2018030123 ~ "Game 3",
+                             game_id == 2018030124 ~ "Game 4",
+                             game_id == 2018030125 ~ "Game 5",
+                             game_id == 2018030126 ~ "Game 6",
+                             game_id == 2018030127 ~ "Game 7")) %>% 
+  ggplot(aes(game_seconds, xG)) +
+  geom_vline(xintercept = c(20,40,60), color = "grey", alpha = 0.4) +
+  geom_hline(yintercept = c(0,1,2,3,4,5), color = "grey", alpha = 0.4)  +
+  geom_line(aes(color = event_team), size = 1.25) +
+  geom_point(data = goals, fill = "white", size = 2, shape = 21, stroke = 1.5, aes(color = event_team)) +
+  scale_color_manual(values = c("light grey", "navy blue")) +
+  facet_wrap(~game_id) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "Expected Goals vs. BOS", subtitle = "All Situations, Data from Evolving Hockey", x = "Minutes")
+
+ggsave('bos2.pdf', height = 10, width = 10)
+```
+```{r}
+goals= pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 3600) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2020 & event_type == "GOAL") %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2019030051 ~ "Game 1",
+                             game_id == 2019030052 ~ "Game 2",
+                             game_id == 2019030053 ~ "Game 3",
+                             game_id == 2019030054 ~ "Game 4",
+                             game_id == 2019030055 ~ "Game 5"))
+
+pbp %>% 
+  filter(!is.na(pred_goal)) %>%
+  group_by(game_id, event_team) %>% 
+  mutate(game_seconds = as.integer(game_seconds)) %>% 
+  pad_int('game_seconds', start_val = 0, end_val = 3600) %>% 
+  mutate(year = lubridate::year(game_date)) %>% 
+  mutate(pred_goal = case_when(is.na(pred_goal) ~ 0, TRUE ~ pred_goal)) %>% 
+  mutate(xG = cumsum(pred_goal)) %>% 
+  ungroup() %>% 
+  filter(year == 2020) %>% 
+  mutate(game_seconds = game_seconds/60) %>% 
+  mutate(game_id = case_when(game_id == 2019030051 ~ "Game 1",
+                             game_id == 2019030052 ~ "Game 2",
+                             game_id == 2019030053 ~ "Game 3",
+                             game_id == 2019030054 ~ "Game 4",
+                             game_id == 2019030055 ~ "Game 5")) %>% 
+  ggplot(aes(game_seconds, xG)) +
+  geom_vline(xintercept = c(20,40,60), color = "grey", alpha = 0.4) +
+  geom_hline(yintercept = c(0,1,2,3,4,5), color = "grey", alpha = 0.4)  +
+  geom_line(aes(color = event_team), size = 2.5) +
+  geom_point(data = goals, fill = "white", size = 6, shape = 21, stroke = 1.5, aes(color = event_team)) +
+  scale_color_manual(values = c("light grey", "navy blue")) +
+  facet_wrap(~game_id) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "Expected Goals vs. CBJ", subtitle = "All Situations, Data from Evolving Hockey", x = "Minutes")
+
+ggsave('cbj.pdf', height = 10, width = 10)
+```
+```{r}
+table = read_csv('Player Season Totals - Natural Stat Trick.csv')
+```
+
+```{r}
+plot = table %>% 
+  select(Player, Position, TOI, `CF%`,`GF%`, `xGF%`) %>% 
+  head(15) %>% 
+  mutate(TOI = round(TOI,0)) %>% 
+  gt() %>% 
+  data_color(
+    columns = vars(`CF%`),
+    colors = scales::col_numeric(
+      palette = c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab"),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = vars(`GF%`),
+    colors = scales::col_numeric(
+      palette = c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab"),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = vars(`xGF%`),
+    colors = scales::col_numeric(
+      palette = c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab"),
+      domain = NULL
+    )
+  ) %>% 
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "left",
+        color = "black",
+        weight = px(3)
+      )
+    ),
+    locations = list(
+      cells_body(
+        columns = vars(`CF%`)
+      )
+    )
+  ) %>%
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "bottom",
+        color = "black",
+        weight = px(3)
+      )
+    ),
+    locations = list(
+      cells_column_labels(
+        columns = gt::everything()
+      )
+    )
+  ) %>% 
+  tab_source_note("TABLE: Mackinaw Stats | DATA: Natural Stat Trick") %>%
+  tab_header(
+    title = md("**2017-2020 Leafs Playoff Metrics**"),
+    subtitle = "Selected Metrics, sorted by TOI"
+  ) %>%
+  # Adjust numeric font
+  tab_style(
+    style = list(
+      cell_text(
+        font = "IBM Plex Sans",
+        align = "center"
+      )
+    ),
+    locations = list(
+      cells_body(columns = vars(Player, Position, TOI, `CF%`,`GF%`, `xGF%`))
+    )
+  ) %>%
+  # Style header font
+  gt::tab_style(
+    style = list(
+      cell_text(font = "IBM Plex Sans", weight = "bold")
+    ),
+    locations = list(
+      cells_column_labels(gt::everything())
+    )
+  ) %>%
+  # Adjust font of Player Column
+  tab_style(
+    style = list(
+      cell_text(font = "IBM Plex Sans")
+    ),
+    location = list(
+      cells_body(columns = vars(Player))
+    )
+  ) %>%
+  # Adjust title font
+  tab_style(
+    style = list(
+      cell_text(
+        font = "IBM Plex Sans",
+        align = "left"
+      )
+    ),
+    locations = list(
+      cells_title(groups = "title")
+    )
+  ) %>%
+  # Adjust sub-title font
+  tab_style(
+    style = list(
+      cell_text(
+        font = "IBM Plex Sans",
+        align = "left"
+      )
+    ),
+    locations = list(
+      cells_title(groups = "subtitle")
+    )
+  )
+ 
+gtsave(plot,'tableplayoffs.pdf')
+```
+

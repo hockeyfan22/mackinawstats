@@ -1,0 +1,75 @@
+---
+title: "week 5"
+author: "Visualizing Hockey"
+date: "10/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+<center>
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/header.PNG)
+# Swag League Week 6 Recap
+
+Welcome to the week 6 edition of the Swag League Weekly Recap - I hope these are a fun way to keep track of scores and highlights from the league. Remember to pay your dues on venmo - enjoy!
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/scb4.PNG)
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/matrix4.png)
+
+
+</center>
+
+***
+## Eliminator Challenge: RIP Shittiest Team Name
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/paluch.jpg)
+Mr. Andrew "Sportz lol" Paluch, son of the late Dinkle, was born June 9, 2008 in Jackson, Wyoming. He maintained a quiet reassurance, offering only information in his fantasy football group chat, without getting too emotional about really anything. Despite this rise to the top of the Swag League standings, the eliminator is a great equalizer, and his first loss was also his last (metaphorically, or if Covid cancels the rest of the season). RIP.
+
+Previous Eliminator Victims: AE | ZB | MG | AG | AK
+
+## Dale Drangus vs. Mike Mike
+Drangus 120 | Mike 93
+
+A sibling rivalry as classic as Harbaughs, the Drangus comes through with a W, after being dubbed the most exciting fantasy football team in the league by the Swag League Comissioner. Julio finally got some rest for his hammy, so no I don't need your goddamn depth WR, and yes I plan to continue hoarding RBs. OBJ probably has Covid though, so offers are always welcome. If Aaron Rodgers didn't have his worst fantasy game I think ever, or if Mike played Jasstin Jefferson (pun intended) - this one could have gone differently.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/rg.gif)
+
+## Scorekeeper Jeff vs. Thomas the Tank Engine
+Jeff 119 | Tank 112
+
+Thomas the Shit Engine shits itself and takes the L against Scorekeeper Jeff, who is in rehab for his chareston chew addiction. We are happy to report he is recovering, but his mood varies heavily with his fantasy team's performance. Dev's tummy needed more fruits and veggies to take down Jeff, who gets nice games from Tannehill and Matt Ryan who was acquired in a recent trade between these two teams.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/jeff.jpg)
+
+## Put It In Reverse Terry vs. Mirjam Poterbin
+Terry 144 | Mirjam 121
+
+This is what happens when you draft bad eggs - you get bad egg performance when it counts. This is why Wonki is helpless without stud GM Tim O'Connor to help him pick out good eggs who play ball the right way. Zkron gets a 30 burger from D Watson (noted decent egg), and solid games from Kittle and Younghoe Koo, basically who Wonki could have become if he listened to Coach Lev during soccer practice.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/wonk.gif)
+
+## Judge Jeudy vs. A good day to ken whisenhunt
+Jeudy 117 | whisenhunt 116
+
+We all remember Bram bullying Akron in the Via Marchella days - well now Akron is pissed off and directing his energy towards winning fantasy football matchups. This was a close matchup decided by a half point - but there was no stat correction in the cards and the middle of the standings tighten some more.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/bp.GIF)
+
+## Tomlin's Fist Pump Supply vs. Straight Outta Hopkin
+Tomlin 74 | Hopkin 127
+
+A not so great performance from Andrew's team, but once you're out of the eliminator, it doesn't really matter how much you lose by. D Henry has a monster 39 points, more points than Zach Bugge's RBs on the whole season (don't check the numbers). Baker Mayfield continues to play like Dev's limp tummy, chucking up a 5 point game against PIT.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/VideoToGif_GIF(2).GIF)
+)
+
+## Fanantasy Football Team vs. Everything is Doing Fine
+FFT 104 | Fine 129
+
+Zach finally gets production from his RB2, Kenyan Drake (we all know Gibson is the top dog) and gets his first deserved win of the season. We know he likes to have a slow start and come from behind, which is mathematically not a good strategy, but we're on the edge of our seats to see if he can repeat last year's magic. With Leveon Bell set to learn some lessons as CEH's backup in KC, the sky is the limit.
+
+![Nice](https://github.com/hockeyfan22/swagleague/blob/master/zb.GIF)

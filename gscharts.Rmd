@@ -1,0 +1,141 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/19/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(curl)
+library(awtools)
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+dates = read_csv('dates.csv')
+```
+
+```{r}
+dates = as.data.frame(seq.Date(from = as.Date('2019-10-02'), to = as.Date('2020-03-11'), by  = 1)) %>% 
+  select("Date" = `seq.Date(from = as.Date("2019-10-02"), to = as.Date("2020-03-11"), by = 1)`)
+```
+```{r}
+urls = dates %>% 
+  mutate(url = rep('https://api.hockeystatcards.com/webapi/get-games?date='),
+         end = rep('&y=1920&s=rs')) %>% 
+  mutate(full = paste0(url,Date,end)) %>% 
+  select(full)
+
+url_list = urls$full
+
+all = map(url_list, jsonlite::fromJSON)
+
+games = bind_rows(unlist(all, recursive = FALSE), .id = 'Col')
+
+gamenum = games %>% 
+  mutate(gamenum = as.character(gamenum)) %>% 
+  select(gamenum) %>% 
+  mutate(url = rep('https://api.hockeystatcards.com/webapi/get-gamescore-card/'),
+         end = rep('?y=1920&s=rs')) %>% 
+  mutate(gamenum = paste0(url,gamenum,end))
+
+game_list = gamenum$gamenum
+
+all_data = map(game_list, jsonlite::fromJSON)
+
+```
+
+```{r}
+gs_data = rbind.fill(lapply(all_data,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  unnest(cols = header, score, date, sqlDate, h_team, v_team, homeAbrev, visAbrev,playerData)
+```
+```{r}
+gs_data %>% 
+  mutate(ID = as.character(group_indices(., date, h_team, v_team))) %>% 
+  ungroup() %>% 
+  mutate(GameScore = as.numeric(GameScore)) %>% 
+  filter(team == "TOR") %>% 
+  group_by(date) %>% 
+  summarize(sum = sum(GameScore)) %>% 
+  mutate(date = lubridate::mdy(date)) %>% 
+  arrange(date) %>% 
+  mutate(roll = rollmean(sum,10,align = "right", na.pad = TRUE)) %>%  
+  ggplot(aes(date,sum)) +
+  stat_smooth(
+        geom = 'area', method = 'loess', span = 3/10,
+        alpha = 1/2, fill = "#00205B") +
+  stat_smooth(
+        geom = 'line', method = 'loess', span = 3/10, color = "#00205B", size = 1.5) +
+  a_plex_theme() +
+  labs(x = "", y = "Leafs GameScore", title = "The Leafs Rollercoaster: Aggregate GameScore", subtitle = "By Date, Using loess smoothing line", caption = "Data from hockeystatcards.com, GameScore model by @domluszczyszyn") +
+  ylim(0,18)
+
+ggsave('gs.pdf', width = 9)
+```
+
+```{r}
+gs_data %>% 
+  mutate(ID = as.character(group_indices(., date, h_team, v_team))) %>% 
+  ungroup() %>% 
+  mutate(GameScore = as.numeric(GameScore)) %>% 
+  group_by(team,date) %>% 
+  summarize(sum = sum(GameScore)) %>% 
+  mutate(date = lubridate::mdy(date)) %>% 
+  ggplot(aes(date,sum)) +
+  stat_smooth(
+        geom = 'area', method = 'loess', span = 3/10,
+        alpha = 1/2, aes(fill = team)) +
+  a_plex_theme() +
+  facet_wrap(~team) +
+  theme(legend.position = "none") +
+  labs(title = "NHL Aggregate Gamescore", x = "", y = "GameScore (sum)", subtitle = "By Date, Using loess smoothing line", caption = "Data from hockeystatcards.com, GameScore model by @domluszczyszyn") +
+  scale_fill_manual(values = c('#b5985a',
+                               '#8c2633',
+                               '#fcb514',
+                               '#002654',
+                               '#ce1126',
+                               '#002654', #cbj
+                               '#ce1126',
+                               '#CF0A2C',
+                               '#6F263D',
+                               '#006847',
+                               '#ce1126',
+                               '#ff4c00',
+                               '#B9975B',
+                               '#111111',
+                               '#024930',
+                               '#af1e2d',
+                               '#ce1126', #NJ
+                               '#FFB81C',
+                               '#00539b',
+                               '#0038A8',
+                               '#bf910c',
+                               '#F74902',
+                               '#fcb514',
+                               '#006d75',
+                               '#002f87',
+                               '#002868',
+                               '#003e7e',
+                               '#001f5b',
+                               '#b4975a',
+                               '#55565a', 
+                               '#C8102E'))
+
+ggsave('facets.pdf', width = 12, height = 12)
+```
+
+
+
+
+

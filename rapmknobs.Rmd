@@ -1,0 +1,112 @@
+---
+title: "leafs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rapm = read_csv("rapmrates.csv")
+
+normalize <- function(x) {
+  x <- (x - mean(x))/sd(x)
+}
+
+
+rapm %>% 
+  filter(position == "F") %>% 
+   group_by(player) %>% 
+  summarize(TOI = sum(TOI),
+            GF_60 = mean(GF_60),
+            xGF_60 = mean(xGF_60),
+            CF_60 = mean(CF_60),
+            xGA_60 = mean(xGA_60),
+            CA_60 = mean(CA_60)) %>% 
+  mutate(xGA_60 = -1 * xGA_60,
+         CA_60 = -1 * CA_60) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(GF_60),
+         xGF_60 = normalize(xGF_60),
+         CF_60 = normalize(CF_60),
+         xGA_60 = normalize(xGA_60),
+         CA_60 = normalize(CA_60)) %>% 
+  filter(player == "PONTUS.ABERG" | player == "KALLE.KOSSILA" | player == "GARRETT.WILSON" | player == "KENNY.AGOSTINO" | player == "JASON.SPEZZA" | player == "NICK.SHORE") %>% 
+  select(-TOI) %>% 
+  melt() %>%
+  ggplot(aes(value,variable)) +
+  geom_point() +
+  facet_wrap(~player) +
+  geom_segment(aes(y = variable, yend = variable,
+                   x = 0, xend = value), size = 1.5, color = "#00205B") +
+  geom_point(size = 3, color = "#00205B") +
+  geom_vline(xintercept = 0) +
+  theme_ipsum_rc() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(title = "RAPM rates among select forwards", subtitle = "Standard Deviation from the Mean, from Evolving Hockey", y = "", x = "Standard Deviation") +
+  scale_x_continuous(breaks = c(-1,0,1), labels = c("-1","0","1"))
+
+ggsave("rapmchart.png")
+```
+
+```{r}
+rapm = read_csv("https://evolving-hockey.com/session/8ee722a1a6ea5f1cc5cf63fd2f7d15d6/download/rapm_sk_download?w=")
+
+normalize <- function(x) {
+  x <- (x - mean(x))/sd(x)
+}
+
+```
+
+```{r}
+
+rapm %>% 
+  mutate(indicator = case_when(Player == "Denis Malgin" & Team == "FLA" ~ "yes",
+                               Player == "Denis Malgin" & Team == "TOR" ~ "no",
+                               Player == "Kyle Clifford" & Team == "L.A" ~ "yes",
+                               Player == "Kyle Clifford" & Team == "TOR" ~ "no",
+                               TRUE ~ "yes")) %>% 
+  filter(indicator == "yes") %>% 
+  mutate(`xGA/60` = -1 * `xGA/60`,
+         `CA/60` = -1 * `CA/60`) %>% 
+  filter(TOI>50) %>% 
+  mutate(GF_60 = normalize(`GF/60`),
+         xGF_60 = normalize(`xGF/60`),
+         CF_60 = normalize(`CF/60`),
+         xGA_60 = normalize(`xGA/60`),
+         CA_60 = normalize(`CA/60`)) %>% 
+  select(-TOI) %>% 
+  reshape2::melt() %>%
+  filter(variable == "GF_60" | variable == "xGF_60" | variable == "CF_60" | variable == "xGA_60" | variable == "CA_60") %>% 
+  filter(Player == "Auston Matthews" | Player == "Zach Hyman" | Player == "William Nylander" | Player == "Kasperi Kapanen" | Player == "John Tavares" | Player == "Mitch Marner" | Player == "Pierre Engvall" | Player == "Alex Kerfoot" | Player == "Denis Malgin" | Player == "Frederik Gauthier" | Player == "Kyle Clifford" | Player == "Jason Spezza") %>%
+  mutate(color2 = ifelse(value>0, "yes","no")) %>% 
+  mutate(Player = factor(Player, levels = c("Zach Hyman",
+                                            "Auston Matthews",
+                                            "William Nylander",
+                                            "Kasperi Kapanen",
+                                            "John Tavares",
+                                            "Mitch Marner",
+                                            "Pierre Engvall",
+                                            "Alex Kerfoot",
+                                            "Denis Malgin",
+                                            "Kyle Clifford",
+                                            "Frederik Gauthier",
+                                            "Jason Spezza"))) %>% 
+  ggplot(aes(value,variable)) +
+  geom_point() +
+  facet_wrap(~Player, ncol = 3) +
+  geom_segment(aes(y = variable, yend = variable,
+                   x = 0, xend = value, color = color2), size = 1.5) +
+  geom_point(size = 3, aes(color = color2)) +
+  geom_vline(xintercept = 0) +
+  a_plex_theme(grid = FALSE) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(title = "RAPM rates, Leafs Lines", subtitle = "Standard Deviation from the Mean, from Evolving Hockey", y = "", x = "Standard Deviation") +
+  scale_x_continuous(breaks = c(-1,0,1), labels = c("-1","0","1")) +
+  theme(legend.position = "none")
+
+ggsave("rapm3.pdf", height = 7)
+
+```
+

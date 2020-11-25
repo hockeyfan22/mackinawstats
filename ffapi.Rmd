@@ -1,0 +1,175 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/13/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(gt)
+library(awtools)
+library(hrbrthemes)
+library(ggthemes)
+library(ggbeeswarm)
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+url = 'http://fantasy.espn.com/apis/v3/games/ffl/seasons/2020/segments/0/leagues/128648?view=mDraftDetail&view=mLiveScoring&view=mMatchupScore&view=mPendingTransactions&view=mPositionalRatings&view=mSettings&view=mTeam&view=modular&view=mNav&view=mMatchupScore'
+
+cookies = c(`SWID`= "{2871A45A-FA0D-4BDF-AB57-EDE8BDF90998}",
+                          `espn_s2`= "AEB06tkVnBZ%2FMi6GDxZRcea6Nyhf0tL2bvjaEr8nrXjZRhQFdc8XOUgJJCqxGKYJt2Q30gdCUaEd%2F%2Bt2NquHSqa8nbjnLp2ba4f%2BJBwqV0trbqOeC%2Fz7Zf11Cdaqz7eWTXCJx0lEGKWyrrrSrBMWF5L1BXSb39LyQGqrfUtkwJPMlYi9sRFL%2By9JvK1SrCiq8gQisG5Iu83z%2FD%2BMtuAgu2KKVs%2FyOjvxciUN5BThms9s87DOdFZfghI2emtm%2FjPe0LRRoURzHivIvO4bfKA0dwwE")
+
+cookie <- paste(names(cookies), cookies, sep = "=", collapse = ";")
+ESPNGet <- httr::GET(url = url, 
+                     config = httr::config(cookie = cookie)
+                     )
+
+ESPNRaw <- rawToChar(ESPNGet$content)
+ESPNFromJSON <- jsonlite::fromJSON(ESPNRaw)
+
+
+```
+
+```{r}
+scoreboard = tibble(
+  AwayID = ESPNFromJSON$schedule$away$teamId,
+  AwayPoints = ESPNFromJSON$schedule$away$totalPoints,
+  HomeID =ESPNFromJSON$schedule$home$teamId,
+  HomePoints = ESPNFromJSON$schedule$home$totalPoints,
+  Winner =ESPNFromJSON$schedule$winner
+  ) %>%
+  left_join(
+    tibble(
+      id = ESPNFromJSON$teams$id,
+      AwayTeam = paste(ESPNFromJSON$teams$location,ESPNFromJSON$teams$nickname)
+    ), by = c("AwayID"="id")
+    ) %>%
+  left_join(
+    tibble(
+      id = ESPNFromJSON$teams$id,
+      HomeTeam = paste(ESPNFromJSON$teams$location,ESPNFromJSON$teams$nickname)
+    ), by = c("HomeID"="id")
+    ) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(week = case_when(between(game,0,6) ~ "Week 1",
+                          between(game,7,12) ~ "Week 2",
+                          between(game,13,18) ~ "Week 3",
+                          between(game,19,24) ~ "Week 4",
+                          between(game,25,30) ~ "Week 5",
+                          between(game,31,36) ~ "Week 6",
+                          between(game,37,42) ~ "Week 7",
+                          between(game,43,48) ~ "Week 8",
+                          between(game,49,54) ~ "Week 9",
+                          between(game,55,60) ~ "Week 10",
+                          between(game,61,66) ~ "Week 11",
+                          between(game,68,72) ~ "Week 12",
+                          between(game,73,78) ~ "Week 13")) %>% 
+  filter(week == "Week 7") %>% 
+  gather(AwayTeam,HomeTeam, key = "key", value = "value") %>% 
+  arrange(game) %>% 
+  mutate(Points = case_when(key == "AwayTeam" ~ AwayPoints,
+                            key == "HomeTeam" ~ HomePoints)) %>% 
+  select("Team" = value, Points, "Matchup" = game) %>% 
+  gt(groupname_col = 'Matchup') %>% 
+  data_color(
+    columns = 2, 
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::blue_material"
+      ) %>% as.character(),
+      domain = NULL
+    )
+  ) %>%
+  tab_options(
+    row_group.border.top.width = px(3),
+    row_group.border.top.color = "black",
+    row_group.border.bottom.color = "black",
+    table_body.hlines.color = "white",
+    table.border.top.color = "white",
+    table.border.top.width = px(3),
+    table.border.bottom.color = "white",
+    table.border.bottom.width = px(3),
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+  ) %>% 
+  tab_header(
+    title = md("**Swag League Week 6 Scoreboard**")
+  ) 
+
+gtsave(scoreboard, 'scoreboard.pdf')
+```
+
+```{r}
+library(RColorBrewer)
+library(ggrepel)
+# Define the number of colors you want
+nb.cols <- 12
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
+
+tibble(
+  AwayID = ESPNFromJSON$schedule$away$teamId,
+  AwayPoints = ESPNFromJSON$schedule$away$totalPoints,
+  HomeID =ESPNFromJSON$schedule$home$teamId,
+  HomePoints = ESPNFromJSON$schedule$home$totalPoints,
+  Winner =ESPNFromJSON$schedule$winner
+  ) %>%
+  left_join(
+    tibble(
+      id = ESPNFromJSON$teams$id,
+      AwayTeam = paste(ESPNFromJSON$teams$location,ESPNFromJSON$teams$nickname)
+    ), by = c("AwayID"="id")
+    ) %>%
+  left_join(
+    tibble(
+      id = ESPNFromJSON$teams$id,
+      HomeTeam = paste(ESPNFromJSON$teams$location,ESPNFromJSON$teams$nickname)
+    ), by = c("HomeID"="id")
+    ) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(week = case_when(between(game,0,6) ~ "Week 1",
+                          between(game,7,12) ~ "Week 2",
+                          between(game,13,18) ~ "Week 3",
+                          between(game,19,24) ~ "Week 4",
+                          between(game,25,30) ~ "Week 5",
+                          between(game,31,36) ~ "Week 6",
+                          between(game,37,42) ~ "Week 7",
+                          between(game,43,48) ~ "Week 8",
+                          between(game,49,54) ~ "Week 9",
+                          between(game,55,60) ~ "Week 10",
+                          between(game,61,66) ~ "Week 11",
+                          between(game,68,72) ~ "Week 12",
+                          between(game,73,78) ~ "Week 13")) %>% 
+  gather(AwayTeam,HomeTeam, key = "key", value = "value") %>% 
+  arrange(game) %>% 
+  mutate(PointsFor = case_when(key == "AwayTeam" ~ AwayPoints,
+                            key == "HomeTeam" ~ HomePoints),
+         PointsAgainst = case_when(key == "AwayTeam" ~ HomePoints,
+                                   key == "HomeTeam" ~ AwayPoints)) %>% 
+  select("Team" = value, PointsFor, PointsAgainst, "Matchup" = game) %>% 
+  group_by(Team) %>% 
+  summarize(PointsFor = sum(PointsFor),
+            PointsAgainst = sum(PointsAgainst)) %>% 
+  mutate(meanpf = mean(PointsFor),
+         meanpa = mean(PointsAgainst)) %>% 
+  ggplot(aes(PointsFor,PointsAgainst)) +
+  geom_hline(aes(yintercept = meanpa), color = "orange", alpha = 0.4, size = 1.25) +
+  geom_vline(aes(xintercept = meanpf), color = "orange", alpha = 0.4, size = 1.25) +
+  geom_point(fill = "white", size = 3, shape = 21, stroke = 1.5,aes(color = Team)) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = mycolors) +
+  geom_text_repel(aes(label = Team), size = 2.9, point.padding = 0.2) +
+  labs(title = "Swag League Points Matrix")
+
+ggsave('matrix.pdf')
+```
+

@@ -1,0 +1,42 @@
+---
+title: "xfsh%"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+danger = read_csv('https://evolving-hockey.com/session/981cb47ca0318910e29865a933dd5a44/download/std_sk_download?w=')
+```
+
+```{r}
+library(awtools)
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+danger %>% 
+  filter(Position == "D") %>% 
+  mutate(color2 = case_when(Player == "Tyson Barrie" ~ "red", TRUE ~ "none")) %>% 
+  ggplot(aes(`xFSh%`,iFF, color = color2, size = color2)) +
+  scale_color_manual(values = c("grey", "#00205B")) +
+  coord_flip() +
+  geom_point(aes(alpha = color2)) +
+  scale_alpha_manual(values = c(0.4,0.8)) +
+  scale_size_manual(values = c(3,5))+
+  a_plex_theme() +
+  theme(legend.position = "none") +
+  labs(title = "Tyson Barrie Shoots Too Much", subtitle = "All situations, Defensemen.Expected Shooting % vs. Shots", caption = "Data from @EvolvingHockey, Chart by @MackinawStats", x = "Shot Quality (xFSh%)", y = "Unblocked Shots")
+
+ggsave("tyson.pdf")
+```
+

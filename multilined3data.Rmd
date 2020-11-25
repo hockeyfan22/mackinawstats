@@ -1,0 +1,120 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "10/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+seasons = read_csv('dates.csv') %>%  
+  filter(Date != "Total")
+```
+
+```{r}
+write_csv(seasons, 'seasonsd3.csv')
+```
+
+```{r}
+data = read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21.csv') %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (1).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (2).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (3).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (4).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (5).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (6).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (7).csv')) %>% 
+  rbind(read_csv('EH_game_log_tor_on-ice_all_regular_2020-10-21 (8).csv'))
+```
+```{r}
+data %>% 
+  filter(Date != "Total") %>% 
+  group_by(Season) %>% 
+  mutate(Points = case_when(GF>GA ~ 2,
+                            GF<GA & TOI>60 ~ 1,
+                            TRUE ~ 0)) %>% 
+  mutate(cumpoints = cumsum(Points)) %>% 
+  summarize(final = max(cumpoints))
+```
+```{r}
+gamelog = read_csv('gamelog.csv')
+```
+```{r}
+gamelog %>% 
+  select(GP, Date, Opponent, GF, GA, "result" = X7, "OT" = X8) %>% 
+  mutate(Points = case_when(result == "W" ~ 2,
+                            result == "L" & OT == "OT" ~ 1,
+                            result == "L" & OT == "SO" ~ 1,
+                            TRUE ~ 0)) %>%
+  mutate(season = lubridate::year(Date)) %>% 
+  group_by(season) %>% 
+  mutate(sumpoints = cumsum(Points)) %>% 
+  select(GP,season, sumpoints) %>% 
+  pivot_wider(names_from = GP, values_from = sumpoints) %>% 
+  unnest()
+```
+```{r}
+library(rvest)
+library(tidyverse)
+
+url = "https://www.hockey-reference.com/teams/TOR/"
+end = "_gamelog.html"
+
+seasons = as.character((seq(2000,2020)))
+
+url = data_frame(url,end,seasons) %>% mutate(url = paste0(url,seasons,end)) %>% filter(seasons != "2005") %>% select(url)
+
+url = url$url
+```
+
+```{r}
+get_data = function (url) {
+  url %>% 
+  read_html() %>% 
+    html_nodes("table") %>%
+        .[1] %>%
+        html_table(fill = TRUE) %>% 
+    .[[1]]
+}
+```
+
+```{r}
+results = url %>% 
+  map_df(get_data) %>% 
+  plyr::rbind.fill()
+```
+```{r}
+names(results) <- as.matrix(results[1, ])
+dat <- results[-1, ]
+dat[] <- lapply(dat, function(x) type.convert(as.character(x)))
+dat
+```
+```{r}
+d3 = dat[,1:8] %>% 
+  select(GP, Date, Opponent, GF, GA, "result" = `.1`, "OT" = `.2`) %>% 
+  as_data_frame() %>% 
+  filter(Date != "Date") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  mutate(year = year(Date),
+         month = month(Date)) %>% 
+  mutate(Season = case_when(month>=10 & month <=12 ~ year,
+                            month<10 ~ year-1)) %>% 
+  mutate(points = case_when(result == "W" ~ 2,
+                            result == "T" ~ 1,
+                            result == "L" & OT == "OT" ~ 1,
+                            result == "L" & OT == "SO" ~ 1,
+                            TRUE ~ 0)) %>% 
+  group_by(Season) %>% 
+  mutate(cumpoints = cumsum(points)) %>% 
+  select(GP,Season, cumpoints) %>% 
+  pivot_wider(names_from = GP, values_from = cumpoints)
+
+write_csv(d3, 'd3.csv')
+```
+
+

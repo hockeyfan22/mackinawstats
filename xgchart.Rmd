@@ -1,0 +1,69 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(downloader)
+
+download("http://peter-tanner.com/moneypuck/downloads/shots_2019.zip", dest="dataset.zip", mode="wb") #downloads the zip file
+unzip ("dataset.zip", exdir = ".") #unzip the file into our directory
+shots = read_csv("shots_2019.csv") #read in the shots csv file
+
+game_to_chart = 30411 #insert game_id we want to chart
+
+shots %>% 
+  filter(game_id == game_to_chart) #filter data to this game
+
+library(padr)
+shots %>% 
+  filter(game_id == game_to_chart) %>%
+  pad_int('time', group = 'teamCode', start_val = 0, end_val = 3600) %>%  #pad data for seconds without a shot
+  mutate(xGoal = ifelse(is.na(xGoal),0,xGoal)) #convert NAs to 0 so they are plotted
+
+plot = shots %>% 
+  filter(game_id == game_to_chart) %>%
+  pad_int('time', group = 'teamCode', start_val = 0, end_val = 3600) %>%  #pad data for seconds without a shot
+  mutate(xGoal = ifelse(is.na(xGoal),0,xGoal)) %>%  #convert NAs to 0 so they are plotted
+  group_by(teamCode) %>%
+  mutate(cumulativexG = cumsum(xGoal))  #take cumulative sum to add up xG over time
+ 
+plot %>%  
+  ggplot(aes(time, cumulativexG, group = teamCode, color = teamCode)) +
+  geom_line() +
+  geom_point(data = plot %>% filter(goal == 1))
+
+```
+
+```{r}
+#Packages required for the ggplot theme
+library(awtools)
+library(showtext)
+library(extrafont)
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+showtext_auto()
+
+plot %>%  
+  ggplot(aes(time, cumulativexG, group = teamCode, color = teamCode)) +
+  geom_line(size = 1.5) +
+  geom_point(data = plot %>% filter(goal == 1), fill = "white", size = 3.5, alpha = 0.9, shape = 21, stroke = 1.5) +
+  geom_vline(xintercept = c(1200,2400,3600), color = "grey", alpha = 0.4) +
+  geom_hline(yintercept = c(1,2,3,4), color = "grey", alpha = 0.4) +
+  a_plex_theme(grid = FALSE) +
+  scale_color_manual(values = c('#006847', '#00205B')) +
+  labs(title = "DAL 4 vs. TBL 1", subtitle = "Game 1 Expected Goals from Moneypuck.com", x = "Game Seconds", y = "Expected Goals", caption = "Chart by @MackinawStats, data from @Moneypuck") +
+  scale_x_continuous(breaks = c(1200,2400,3600)) +
+  geom_label(data = plot %>% filter(time == 3600), aes(label = teamCode), vjust = 1.5) +
+  theme(legend.position = "none")
+
+ggsave('game1.pdf')
+```
+

@@ -1,0 +1,125 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "5/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(zoo)
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+kapice20 = read_csv('EH_game_log_kasperi_kapanen_on-ice_5v5_regular_2020-05-04.csv')
+kapice19 = read_csv('EH_game_log_kasperi_kapanen_on-ice_5v5_regular_2020-05-04 (1).csv')
+kapice18 = read_csv('EH_game_log_kasperi_kapanen_on-ice_5v5_regular_2020-05-04 (2).csv')
+```
+
+```{r}
+kapice = kapice20 %>% 
+  rbind(kapice19) %>% 
+  rbind(kapice18)
+```
+
+```{r}
+kapice %>% 
+  filter(Date != "Total") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(`10 Game Rolling xGF%` = rollmean(`xGF%`,10, align = "right", fill = NA),
+         `10 Game Rolling CF%` = rollmean(`CF%`,10, align = "right", fill = NA)) %>% 
+  gather(`10 Game Rolling xGF%`,`10 Game Rolling CF%`, key = "metric", value = "value") %>% 
+  ggplot(aes(game,value, group = metric, color = Season)) +
+  geom_hline(yintercept = 50, color = "grey", size = 1.1, alpha = 0.3) +
+  geom_line(size = 1.4) +
+  facet_wrap(~metric, nrow = 2) +
+  awtools::a_plex_theme() +
+  labs(title = "Kasperi Kapanen Shot Share", subtitle = "Rolling 10 Game Averages, Data from Evolving Hockey", y = "", x = "Games") +
+  theme(legend.position = "none")
+```
+```{r}
+kapice %>% 
+  filter(Date != "Total") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(`10 Game Rolling xGF` = rollmean(`xGF`,10, align = "right", fill = NA),
+         `10 Game Rolling CF` = rollmean(`CF`,10, align = "right", fill = NA)) %>% 
+  gather(`10 Game Rolling xGF`,`10 Game Rolling CF`, key = "metric", value = "value") %>% 
+  ggplot(aes(game,value, group = metric, color = Season)) +
+  geom_line(size = 1.4) +
+  facet_wrap(~metric, nrow = 2, scales = "free") +
+  awtools::a_plex_theme() +
+  labs(title = "Kasperi Kapanen Shot Share", subtitle = "Rolling 10 Game Averages, Data from Evolving Hockey", y = "", x = "Games") +
+  theme(legend.position = "none")
+
+
+ggsave('shotshare.pdf', width = 8, height = 5)
+```
+
+
+```{r}
+kapi20 = read_csv('EH_game_log_kasperi_kapanen_box_score_all_regular_2020-05-04.csv')
+kapi19 = read_csv('EH_game_log_kasperi_kapanen_box_score_all_regular_2020-05-04 (1).csv')
+kapi18 = read_csv('EH_game_log_kasperi_kapanen_box_score_all_regular_2020-05-04 (2).csv')
+```
+
+```{r}
+kapi = kapi20 %>% 
+  rbind(kapi19) %>% 
+  rbind(kapi18)
+```
+
+```{r}
+kapi %>% 
+  filter(Date != "Total") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(`10 Game Rolling iCF` = rollmean(`iCF`,10, align = "right", fill = NA),
+         `10 Game Rolling ixG` = rollmean(`ixG`,10, align = "right", fill = NA)) %>% 
+  gather(`10 Game Rolling iCF`,`10 Game Rolling ixG`, key = "metric", value = "value") %>% 
+  ggplot(aes(game,value, group = metric, color = Season)) +
+  geom_line(size = 1.4) +
+  facet_wrap(~metric, nrow = 2, scales = "free") +
+  awtools::a_plex_theme() +
+  labs(title = "Kasperi Kapanen Shot Production", subtitle = "Rolling 10 Game Averages, Data from Evolving Hockey", y = "", x = "Games") +
+  theme(legend.position = "none")
+
+ggsave('shotprod.pdf', width = 8, height = 5)
+```
+```{r}
+kapi %>% 
+  filter(Date != "Total") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  arrange(Date) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(rollxg = rollmean(ixG, 10, align = "right", fill = NA),
+         rolliff = rollmean(iFF,10,align = "right", fill =NA)) %>% 
+  mutate(xfsh = (rollxg/rolliff) * 100) %>% 
+  mutate(xfsh = if_else(xfsh == "NaN",0,xfsh)) %>% 
+  ggplot(aes(game, xfsh)) +
+  geom_line(size = 1.4, aes(color = Season)) +
+  awtools::a_plex_theme() +
+  labs(title = "Kasperi Kapanen Shot Production", subtitle = "Rolling 10 Game Averages, Data from Evolving Hockey", y = "", x = "Games") +
+  theme(legend.position = "none") + 
+  ylim(0,15)
+```
+
+
+

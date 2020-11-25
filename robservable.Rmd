@@ -1,0 +1,49 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "10/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+remotes::install_github("juba/robservable")
+```
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(robservable)
+
+## Load Covid-19 data from Johns Hopkins Github repository
+d2 <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+
+## Reformat data 
+d <- d2 %>%
+  select(-`Province/State`, -Lat, -Long) %>%
+  rename(id = `Country/Region`) %>%
+  group_by(id) %>%
+  summarise(dplyr::across(everything(), sum)) %>%
+  pivot_longer(-id, names_to = "date") %>%
+  mutate(date = as.character(lubridate::mdy(date)))
+
+## Generate chart
+robservable(
+  "https://observablehq.com/@juba/bar-chart-race",
+  include = c("viewof date", "chart", "draw", "styles"),
+  hide = "draw",
+  input = list(
+    data = d,
+    title = "COVID-19 deaths",
+    subtitle = "Cumulative number of COVID-19 deaths by country",
+    source = "Source : Johns Hopkins University"
+  ),
+  width = 700,
+  height = 710
+)
+```
+

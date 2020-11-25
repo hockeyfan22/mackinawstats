@@ -1,0 +1,88 @@
+---
+title: "radars"
+author: "Visualizing Hockey"
+date: "5/6/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(scales)
+library(tidyverse)
+library(viridis)
+library(awtools)
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+
+coord_radar <- function (theta = "x", start = 0, direction = 1) {
+  theta <- match.arg(theta, c("x", "y"))
+  r <- if (theta == "x") "y" else "x"
+  ggproto("CordRadar", CoordPolar, theta = theta, r = r, start = start, 
+          direction = sign(direction),
+          is_linear = function(coord) TRUE)
+}
+```
+
+```{r}
+gar = read_csv('https://evolving-hockey.com/session/4483a85220bacc68ef17826bbe374df1/download/gar_sk_download?w=')
+
+ggplot(toplot, aes(x=variable, y=value, group=acteur)) +
+  geom_polygon() +
+  facet_wrap(acteur ~ .) +
+  coord_radar()
+```
+
+```{r}
+gar %>% 
+  filter(Team == "TOR") %>% 
+  mutate(Player = fct_reorder(Player,GAR)) %>% 
+  mutate(Player = fct_rev(Player)) %>% 
+  select(Player, "EVO" = EVO_GAR, "EVD" = EVD_GAR, "PPO" = PPO_GAR, "SHD" = SHD_GAR, "Take" = Take_GAR, "Draw" = Draw_GAR) %>% 
+  reshape2::melt(id = "Player") %>% 
+  ggplot(aes(variable,value, group = Player)) +
+  geom_polygon(fill = "#00205B") +
+  facet_wrap(~Player) +
+  a_plex_theme() +
+  coord_radar() +
+    theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  labs(title = "Leafs GAR Values")
+
+ggsave('garz.pdf', height = 10, width = 10)
+```
+```{r}
+gar %>%
+  mutate(Player = fct_reorder(Player,GAR)) %>% 
+  mutate(Player = fct_rev(Player)) %>% 
+  select(Player, "EVO" = EVO_GAR, "EVD" = EVD_GAR, "PPO" = PPO_GAR, "SHD" = SHD_GAR, "Take" = Take_GAR, "Draw" = Draw_GAR) %>% 
+  mutate_if(is_double, ntile, 100) %>% 
+  reshape2::melt(id = "Player") %>% 
+  filter(Player == "William Nylander") %>% 
+  ggplot(aes(variable,value, group = Player)) +
+  geom_polygon(fill = "#00205B") +
+  facet_wrap(~Player) +
+  a_plex_theme() +
+  coord_radar() +
+  labs(title = "Leafs GAR Values")
+
+#ggsave('garz.pdf', height = 10, width = 10)
+```
+

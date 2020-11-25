@@ -1,0 +1,98 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+pbp = read_csv('https://evolving-hockey.com/session/921abdf506c4bb1278b0d78cde9c8ba1/download/pbp_query_download?w=', col_types = cols(home_on_7 = col_character(), away_on_7 = col_character()))
+```
+
+```{r}
+games = pbp %>% 
+  count(game_id, event_team) %>% 
+  filter(!is.na(event_team)) %>% 
+  group_by(event_team) %>% 
+  mutate(col = row_number()) %>% 
+  select(-n)
+```
+
+```{r}
+games2 = pbp %>% 
+  left_join(games) %>% 
+  filter(!is.na(pred_goal)) %>% 
+  mutate(row = case_when(between(col,0,5) ~ "one",
+                         between(col,6,10) ~ "two",
+                         between(col,11,15) ~ "three",
+                         between(col,16,20) ~ "four",
+                         between(col,21,25) ~ "five",
+                         between(col,26,30) ~ "six",
+                         between(col,31,35) ~ "seven",
+                         between(col,36,40) ~ "eight",
+                         between(col,41,45) ~ "nine",
+                         between(col,46,50) ~ "ten",
+                         between(col,51,55) ~ "eleven")) %>% 
+  mutate(column = case_when(col %in% c(1,6,11,16,21,26,31,36,41,46,51) ~ "one",
+                            col %in% c(2,7,12,17,22,27,32,37,42,47,52) ~ "two",
+                            col %in% c(3,8,13,18,23,28,33,38,43,48,53) ~ "three",
+                            col %in% c(4,9,14,19,24,29,34,39,44,49,54) ~ "four",
+                            col %in% c(5,10,15,20,25,30,35,40,45,50) ~ "five")) %>% 
+  mutate(goal = ifelse(event_type == "GOAL",1,0)) %>% 
+  filter(home_team == "TOR" | away_team == "TOR")
+
+write_csv(games2, 'gameflow2.csv')
+```
+```{r}
+game = pbp %>% 
+  count(game_id) %>% 
+  mutate(game = row_number()) %>% 
+  select(-n)
+```
+
+```{r}
+leafs = pbp %>% 
+  left_join(game) %>% 
+  filter(!is.na(pred_goal)) %>% 
+  mutate(row = case_when(between(game,0,5) ~ "one",
+                         between(game,6,10) ~ "two",
+                         between(game,11,15) ~ "three",
+                         between(game,16,20) ~ "four",
+                         between(game,21,25) ~ "five",
+                         between(game,26,30) ~ "six",
+                         between(game,31,35) ~ "seven",
+                         between(game,36,40) ~ "eight",
+                         between(game,41,45) ~ "nine",
+                         between(game,46,50) ~ "ten",
+                         between(game,51,55) ~ "eleven")) %>% 
+  mutate(gameumn = case_when(game %in% c(1,6,11,16,21,26,31,36,41,46,51) ~ "one",
+                            game %in% c(2,7,12,17,22,27,32,37,42,47,52) ~ "two",
+                            game %in% c(3,8,13,18,23,28,33,38,43,48,53) ~ "three",
+                            game %in% c(4,9,14,19,24,29,34,39,44,49,54) ~ "four",
+                            game %in% c(5,10,15,20,25,30,35,40,45,50) ~ "five")) %>% 
+  mutate(goal = ifelse(event_type == "GOAL",1,0)) %>% 
+  mutate(minutes = game_seconds/60) %>% 
+  group_by(game_id, event_team) %>% 
+  mutate(cum = cumsum(pred_goal)) %>% 
+  mutate(goalsxg = case_when(goal == 1 ~ cum,
+                             TRUE ~ 0))
+
+write_csv(leafs, "leaffacets.csv")
+```
+```{r}
+leafs %>% 
+  group_by(game_id, game_date, event_team) %>% 
+  summarize(score = sum(event_type == "GOAL")) %>% 
+  spread(key = event_team, value = score) %>% 
+  gather(-game_id,-game_date, -TOR,key = "key", value = "value") %>% 
+  filter(!is.na(value)) %>% 
+  mutate(win = if_else(TOR>value, "W","L"))
+```
+

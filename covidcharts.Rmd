@@ -1,0 +1,85 @@
+---
+title: "covidhockey"
+author: "Visualizing Hockey"
+date: "5/5/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggthemes)
+library(hrbrthemes)
+
+covidg = read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+
+covidusa = read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv')
+
+state = read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv')
+```
+
+```{r}
+states = c('Arizona', 'California','Colorado','Florida','Illinois','Massachusetts','Michigan','Minnesota','Missouri','Nevada','New Jersey','New York','North Carolina', 'Ohio', 'Pennsylvania','Tennessee','Texas','District of Columbia')
+
+covidusa = covidusa %>% 
+  filter(Province_State %in% states) %>% 
+  group_by(Province_State) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  select(-UID, -code3, -FIPS, "Province/State" = Province_State)
+```
+```{r}
+provinces = c('Alberta','Quebec','Ontario','Manitoba', 'British Columbia')
+
+covidg = covidg %>% 
+  filter(`Province/State` %in% provinces) %>% 
+  group_by(`Province/State`) %>% 
+  summarize_if(is.numeric, sum)
+```
+
+
+```{r}
+library(RColorBrewer)
+# Define the number of colors you want
+nb.cols <- 23
+mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+```
+
+```{r}
+covidusa %>% 
+  plyr::rbind.fill(covidg) %>% 
+  select(-Long, -Lat, -Long_) %>% 
+  gather(key = "variable", value = "value",-`Province/State`) %>% 
+  mutate(variable = lubridate::mdy(variable)) %>% 
+  mutate(`Province/State` = fct_reorder(`Province/State`, value, .fun = sum)) %>% 
+  mutate(`Province/State` = fct_rev(`Province/State`)) %>% 
+  filter(variable>'2020-02-29') %>% 
+  ggplot(aes(variable, value)) +
+  geom_line(aes(color = `Province/State`), size = 1.5) +
+  scale_color_manual(values = mycolors) +
+  facet_wrap(~`Province/State`) +
+  awtools::a_plex_theme(grid = FALSE) +
+  scale_y_log10(labels = scales::comma) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%B") +
+  theme(legend.position = "none") +
+  labs(x= "Cases", y ="")
+
+ggsave('covid.pdf', width = 11, height = 10)
+```
+
+
+```{r}
+covidusa %>% 
+  plyr::rbind.fill(covidg) %>% 
+  select(-Long, -Lat, -Long_) %>% 
+  gather(key = "variable", value = "value",-`Province/State`) %>% 
+  mutate(variable = lubridate::mdy(variable)) %>% 
+  mutate(`Province/State` = fct_reorder(`Province/State`, value, .fun = sum)) %>% 
+  mutate(`Province/State` = fct_rev(`Province/State`)) %>% 
+  filter(variable>'2020-05-03') %>% 
+  arrange(desc(value))
+```
+

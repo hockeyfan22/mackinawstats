@@ -1,0 +1,53 @@
+---
+title: "tableau calendar"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+pbp = read_csv('https://evolving-hockey.com/session/4c2cfc0ecc9e5dd6fc9abb99501f23be/download/pbp_query_download?w=')
+
+calendar = pbp %>% 
+  filter(!is.na(pred_goal)) %>% 
+  group_by(game_id) %>% 
+  mutate(non_event_team = case_when(event_team == away_team ~ home_team,
+                                    event_team == home_team ~ away_team)) %>% 
+  ungroup() %>% 
+  select(game_id,event_team,non_event_team, home_team, away_team, pred_goal,home_on_1,home_on_2,home_on_3,home_on_4,home_on_5,home_on_6,home_on_7,away_on_1,away_on_2,away_on_3,away_on_4,away_on_5,away_on_6,away_on_7, game_date) %>% 
+  gather(home_on_1,home_on_2,home_on_3,home_on_4,home_on_5,home_on_6,home_on_7,away_on_1,away_on_2,away_on_3,away_on_4,away_on_5,away_on_6,away_on_7, key = "key", value = "value") %>% 
+  mutate(key = str_sub(key,1,4)) %>% 
+  mutate(xGF = case_when(key == "home" & event_team == away_team ~ 0,
+                                key == "away" & event_team == home_team ~ 0,
+                                TRUE ~ pred_goal)) %>% 
+  mutate(xGA = case_when(key == "home" & event_team == away_team ~ pred_goal,
+                                key == "away" & event_team == home_team ~ pred_goal,
+                                TRUE ~ 0)) %>% 
+  filter(!is.na(value)) %>% 
+  mutate(team = case_when(key == "home" ~ home_team,
+                          key == "away" ~ away_team)) %>% 
+  group_by(value, game_id, team, home_team, away_team, game_date) %>% 
+  summarize(xGF = sum(xGF),
+            xGA = sum(xGA)) %>% 
+  mutate(sum = xGF + xGA) %>% 
+  mutate(`xGF%` = xGF/sum) %>% 
+  mutate(designation = case_when(team == home_team ~ "home",
+                                 team == away_team ~ "away")) %>% 
+  mutate(opposition = case_when(team == home_team ~ away_team,
+                                team == away_team ~ home_team))
+
+write_csv(calendar, "calendar.csv")
+```
+
+```{r}
+players = calendar %>% 
+  ungroup() %>% 
+  count(value) %>% 
+  select(value)
+
+write_csv(players, "players.csv")
+```
+

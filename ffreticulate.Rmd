@@ -1,0 +1,45 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(reticulate)
+use_virtualenv("myenv")
+```
+
+```{python}
+r.url = 'http://fantasy.espn.com/apis/v3/games/ffl/seasons/2020/segments/0/leagues/128648?view=mDraftDetail&view=mLiveScoring&view=mMatchupScore&view=mPendingTransactions&view=mPositionalRatings&view=mSettings&view=mTeam&view=modular&view=mNav&view=mMatchupScore'
+
+import requests
+
+r = requests.get(r.url,
+                 cookies={"SWID": "{2871A45A-FA0D-4BDF-AB57-EDE8BDF90998}",
+                          "espn_s2": "AEB06tkVnBZ%2FMi6GDxZRcea6Nyhf0tL2bvjaEr8nrXjZRhQFdc8XOUgJJCqxGKYJt2Q30gdCUaEd%2F%2Bt2NquHSqa8nbjnLp2ba4f%2BJBwqV0trbqOeC%2Fz7Zf11Cdaqz7eWTXCJx0lEGKWyrrrSrBMWF5L1BXSb39LyQGqrfUtkwJPMlYi9sRFL%2By9JvK1SrCiq8gQisG5Iu83z%2FD%2BMtuAgu2KKVs%2FyOjvxciUN5BThms9s87DOdFZfghI2emtm%2FjPe0LRRoURzHivIvO4bfKA0dwwE"})
+d = r.json()
+r.status_code
+```
+
+```{r}
+library(tidyverse)
+library(purrr)
+
+TeamRecords =
+  py$d$teams %>%
+  map_df(magrittr::extract, c("location", "nickname", "id")) %>%
+  bind_cols(
+    py$d$teams %>%
+    map("record") %>%
+    map("overall") %>%
+    map_df(magrittr::extract, c("losses", "wins"))
+  ) %>%
+  unite(Team, c(location, nickname), sep = " ")
+```
+
+

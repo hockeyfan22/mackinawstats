@@ -1,0 +1,524 @@
+---
+title: "tableau reformat"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+
+```{r}
+pbp = read_csv('pbp.csv')
+```
+
+```{r}
+pbp = pbp %>%
+  filter(event_type == "SHOT" | event_type == "GOAL" | event_type == "MISS") %>% 
+  mutate(coords_x = case_when(event_team == "TOR" ~ abs(coords_x),
+                                        event_team != "TOR" ~ -abs(coords_x),
+                                        TRUE ~ coords_x)) %>% 
+  mutate(index = row_number())
+
+write_csv(pbp, "pbp2.csv")
+```
+
+```{r}
+shots2019 = read_csv('shots2019.csv') %>% 
+  group_by(event_player_1, event_team) %>% 
+  summarize(xG = sum(pred_goal, na.rm = TRUE))
+
+write_csv(shots2019, "shots2.csv")
+```
+```{r}
+results = read_csv('results1215.csv')
+```
+```{r}
+results = results %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor)) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>% 
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  group_by(week, team) %>% 
+  summarize(pointsperweek = sum(Points)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(week) %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+
+write_csv(results, "results.csv")
+```
+
+
+```{r}
+abb = results %>% 
+  ungroup() %>% 
+  count(team) %>% 
+  select(team) %>% 
+  mutate(abbreviation = case_when(team == "Anaheim Ducks" ~ "ANA",
+                                  team == "Arizona Coyotes" ~ "ARI",
+                                  team == "Boston Bruins" ~ "BOS",
+                                  team == "Buffalo Sabres" ~ "BUF",
+                                  team == "Calgary Flames" ~ "CGY",
+                                  team == "Carolina Hurricanes" ~ "CAR",
+                                  team == "Chicago Blackhawks" ~ "CHI",
+                                  team == "Colorado Avalanche" ~ "COL",
+                                  team == "Columbus Blue Jackets" ~ "CBJ",
+                                  team == "Dallas Stars" ~ "DAL",
+                                  team == "Detroit Red Wings" ~ "DET",
+                                  team == "Edmonton Oilers" ~ "EDM",
+                                  team == "Florida Panthers" ~ "FLA",
+                                  team == "Los Angeles Kings" ~ "LAK",
+                                  team == "Minnesota Wild" ~ "MIN",
+                                  team == "Montreal Canadiens" ~ "MTL",
+                                  team == "Nashville Predators" ~ "NSH",
+                                  team == "New Jersey Devils" ~ "NJD",
+                                  team == "New York Islanders" ~ "NYI",
+                                  team == "New York Rangers" ~ "NYR",
+                                  team == "Ottawa Senators" ~ "OTT",
+                                  team == "Philadelphia Flyers" ~ "PHI",
+                                  team == "Pittsburgh Penguins" ~ "PIT",
+                                  team == "San Jose Sharks" ~ "SJS",
+                                  team == "St. Louis Blues" ~ "STL",
+                                  team == "Tampa Bay Lightning" ~ "TBL",
+                                  team == "Toronto Maple Leafs" ~ "TOR",
+                                  team == "Vancouver Canucks" ~ "VAN",
+                                  team == "Vegas Golden Knights" ~ "VGK",
+                                  team == "Washington Capitals" ~ "WSH",
+                                  team == "Winnipeg Jets" ~ "WPG"))
+
+write_csv(abb, "abb.csv")
+```
+
+```{r}
+appended = results %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor)) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>% 
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = floor_date(Date, unit = "week")) %>% 
+  group_by(week, team) %>% 
+  summarize(pointsperweek = sum(Points)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(week) %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+
+write_csv(appended,"results2.csv")
+```
+```{r}
+results = read_csv('results1220.csv')
+
+results = results %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor)) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>% 
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>%  
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23")) %>% 
+  group_by(week, text, team) %>% 
+  summarize(pointsperweek = sum(Points)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(week) %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+
+write_csv(results, "results1220rrr.csv")
+```
+```{r}
+results = read_csv('results1221.csv')
+
+results = results %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ "NA")) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23")) %>% 
+  group_by(week, team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+  
+
+write_csv(results, "results1221rt.csv")
+```
+```{r}
+results = read_csv('resultsupdate.csv')
+
+results = results %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ "NA")) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23")) %>% 
+  group_by(week, team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+  
+
+write_csv(results, "results1221rt2.csv")
+```
+```{r}
+results = read_csv('results.csv')
+
+results = results %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ "NA")) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23")) %>% 
+  group_by(week, team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+  
+
+write_csv(results, "results1226r.csv")
+```
+```{r}
+results = read_csv('results1229.csv')
+
+results = results %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ "NA")) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23",
+                          week == 52 ~ "12/24 to 12/30")) %>% 
+  filter(week!=53) %>% 
+  group_by(week, team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+  
+
+write_csv(results, "results1229rr.csv")
+```
+
+```{r}
+results = read_csv('results113.csv')
+
+results = results %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ "NA")) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(week = if_else(week == 53,54,week)) %>% 
+  mutate(week = if_else(week == 1,54,week)) %>%
+  mutate(week = if_else(week == 2,55,week)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23",
+                          week == 52 ~ "12/24 to 12/30",
+                          week == 53 ~ "12/31 to 1/6",
+                          week == 54 ~ "12/31 to 1/6",
+                          week == 55 ~ "1/7 to 1/13")) %>% 
+  group_by(week, team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+  
+
+write_csv(results, "results113r.csv")
+```
+```{r}
+#Specify URL to pull data from
+url = 'https://www.hockey-reference.com/leagues/NHL_2020_games.html'
+#Read the html from the URL, specify which areas to read, and read in as a table
+table = url %>% 
+  read_html(url) %>% 
+  html_nodes('div table') %>% 
+  html_table(header = TRUE)
+#Current format is a list, this selects the dataframe in the list
+
+data = table[[1]]
+
+colnames(data)[3] <- "VG"
+colnames(data)[5] <- "HG"
+colnames(data)[6] <- "OT"
+
+pointrank = data %>% 
+  select(-Notes) %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ "NA")) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(week = if_else(week == 53,54,week)) %>% 
+  mutate(week = if_else(week == 1,54,week)) %>%
+  mutate(week = if_else(week == 2,55,week)) %>% 
+  mutate(week = if_else(week == 3,56,week)) %>% 
+  mutate(week = if_else(week == 4,57,week)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23",
+                          week == 52 ~ "12/24 to 12/30",
+                          week == 53 ~ "12/31 to 1/6",
+                          week == 54 ~ "12/31 to 1/6",
+                          week == 55 ~ "1/7 to 1/13",
+                          week == 56 ~ "1/14 to 1/20",
+                          week ==57 ~ "1/21 to 1/27")) %>%
+  group_by(week, team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+
+write_csv(pointrank, 'pointrank118.csv')
+  
+```
+```{r}
+#Specify URL to pull data from
+url = 'https://www.hockey-reference.com/leagues/NHL_2020_games.html'
+#Read the html from the URL, specify which areas to read, and read in as a table
+table = url %>% 
+  read_html(url) %>% 
+  html_nodes('div table') %>% 
+  html_table(header = TRUE)
+#Current format is a list, this selects the dataframe in the list
+
+data = table[[1]]
+
+colnames(data)[3] <- "VG"
+colnames(data)[5] <- "HG"
+colnames(data)[6] <- "OT"
+
+pointrank = data %>% 
+  select(-Notes) %>% 
+  mutate(Points = case_when(is.na(HG) ~ 0)) %>% 
+  mutate(Winner = case_when(HG>VG ~ Home,
+                            VG>HG ~ Visitor,
+                            is.na(HG) ~ Home)) %>% 
+  mutate(Loser = case_when(HG>VG ~ Visitor,
+                           VG>HG ~ Home,
+                           TRUE ~ Visitor)) %>% 
+  select(Date, Winner, Loser, OT) %>% 
+  gather(Winner, Loser, key = "key", value = "team") %>%
+  mutate(Points = case_when(key == "Winner" ~ 2,
+                            key == "Loser" & is.na(OT) ~ 0,
+                            key == "Loser" & !is.na(OT) ~ 1)) %>% 
+  mutate(week = lubridate::week(Date)) %>% 
+  mutate(week = case_when(week == 1 ~ 54,
+                          week == 2 ~ 55,
+                          week == 3 ~ 56,
+                          week == 4 ~ 57,
+                          week == 5 ~ 58,
+                          week == 6 ~ 59,
+                          TRUE ~ week)) %>% 
+  mutate(text = case_when(week == 40 ~ "10/2 to 10/7",
+                          week == 41 ~ "10/8 to 10/14",
+                          week == 42 ~ "10/15 to 10/21",
+                          week == 43 ~ "10/22 to 10/28",
+                          week == 44 ~ "10/29 to 11/5",
+                          week == 45 ~ "11/6 to 11/11",
+                          week == 46 ~ "11/12 to 11/18",
+                          week == 47 ~ "11/19 to 11/26",
+                          week == 48 ~ "11/27 to 12/3",
+                          week == 49 ~ "12/4 to 12/9",
+                          week == 50 ~ "12/10 to 12/16",
+                          week == 51 ~ "12/17 to 12/23",
+                          week == 52 ~ "12/24 to 12/30",
+                          week == 53 ~ "12/31 to 1/6",
+                          week == 54 ~ "12/31 to 1/6",
+                          week == 55 ~ "1/7 to 1/13",
+                          week == 56 ~ "1/14 to 1/20",
+                          week == 57 ~ "1/21 to 1/27",
+                          week == 58 ~ "1/28 to 2/3",
+                          week == 59 ~ "2/4 to 2/10")) %>%
+  filter(week>39) %>% 
+  group_by(week,team, text) %>% 
+  summarize(pointsperweek = sum(Points, na.rm = FALSE)) %>% 
+  ungroup() %>% 
+  group_by(team) %>% 
+  mutate(cum = cumsum(pointsperweek)) %>% 
+  ungroup() %>% 
+  group_by(text) %>% 
+  filter(team != "NA") %>% 
+  mutate(rank = rank(-cum, ties.method = "first"))
+
+write_csv(pointrank, 'pointrank118.csv')
+```
+

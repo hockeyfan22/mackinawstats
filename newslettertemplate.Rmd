@@ -1,0 +1,40 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/3/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+<center>
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/blob/master/header.PNG)
+# Visualizing Hockey
+
+Visualizing Hockey investigates and explains hockey-related data through visual essays and data visualization.
+
+</center>
+
+***
+
+## Playoff Teams Success In the Regular Season
+Much has been of the expected unpredictability of playoff results in such an unorthodox environment - I'll admit I thought we might have an interesting Stanley Cup Champion this year after the Canadiens took out the Penguins - but the top teams have largely come through. Of the teams that made it to the second round, nearly all had above average Expected Goals results at 5v5 during the regular season, the Canucks being the lone exception.
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/plot1.PNG)
+
+##Evening Out of Call Persists
+These charts alone aren't enough to draw conclusions, but support the finding that calls tend to even out over the course of a game. Away and Home Team Penalties exhibit a strong correlation - in both the regular and post season. More detailed work has been done by Noah Davis and Michael Lopez on [FiveThirtyEight.com](https://fivethirtyeight.com/features/hockey-refs-are-out-to-get-you-if-they-already-got-the-other-guy/) - who found compelling evidence that referees’ past calls influence their next calls.
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/plot3.PNG)
+
+##Playoff shots
+A hypothesis I've seen floated on twitter and reddit is that as teams struggle to generate offense from the slot, they start relying on low to high offense that lead to point shots and tips. After watching some of the Flyers/Islanders series - I expected to see higher rates of tip goals in comparison to the regular season, but the data says otherwise. There does appear to be a slight uptick in snapshots and slapshots as a percentage of goals - which could support the low to high theory.
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/plot2.PNG)
+
+##Top Performers so far
+Despite being knocked out by the Dallas Stars - Avalanche forwards Nathan MacKinnon and Mikko Rantanen have racked up the most points in the playoffs to date - likely a result of their domination of the Coyotes. The youth at the top is striking - of the top 5, J.T. Miller is the wiliest vet at an old age of 27.
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/plot4.PNG)
+

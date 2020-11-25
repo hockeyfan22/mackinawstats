@@ -1,0 +1,64 @@
+---
+title: "Week 2"
+author: "Visualizing Hockey"
+date: "9/22/2020"
+output: html_document
+---
+
+
+<center>
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/header.PNG)
+# Swag League Week 2 Recap
+
+Welcome to the second edition of the Swag League Weekly Recap - I hope these are a fun way to keep track of scores and highlights from the league. Remember to pay your dues on venmo - enjoy!
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/scoreboard.png)
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/matrix.png)
+
+
+</center>
+
+***
+
+## Dale Drangus vs. DJ Play My Favorite Song
+Drangus 144 | DJ 120
+
+I galaxy-brained my way into playing one of my worst bench options and was feeling a little nervous Sunday night. Then Chef Rusty blew up the New England Defense with a 30 burger and I was back to feeling good again. Gardner Minshew and Jonnu Smith had big games to keep Zach B in it, a staple of the zero-RB strategist. Seriously, someone get this guy some RB help. My weak WR play this week was picked up by the Bears D and clear witness protection participant, Rodrigo Blankenship - that can't be a real name.
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/ryan.GIF)
+
+## Ken Whisenhunt vs. BJs Chubby
+Chubby 138 | Ken 131
+
+Dev enters the group chat thinking he would cruise to an easy victory given Captain Kirk's dogshit game - but this one ended pretty close after a late rally from Bram. Dev's tummy was rumbling though - and he was hungry for a Week 2 victory - aided by Murray, Chubb, and Ryan with big games. And yes, I plan on working in Dev's tummy to the newsletter every week.
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/dev.GIF)
+
+## Mirjam Poterbin vs. Straight Outta Hopkin
+Poterbin 155 | Hopkin 140
+
+Tim's team does solid work in this matchup, coming up a point short of the week high in the league. Well rounded effort from his team with big games from Cam and 3 TD Higbee. We all wanted to see Ruggs take a few 30 yard losses on Monday night, alas, he did next to nothing instead. surprise autodraft A.J Brown did not play this week
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/bram.GIF)
+
+## Take Me Tua Title vs. Scorekeeper Jeff
+Tua 131 | Jeff 130
+
+This was quite a nailbiter - and potentially caused Jeff to spiral into a depressive state - rumors have it he's bought out all the Charlestown Chews in his local area. Waller and Brees with some Monday night Magic to win this one late, leaving Jeff praying on his sleeping bag for an early morning stat correction that never came. Will Fuller seemed to have forgot to play, or effed (keeping this PG) DeShaun Watson's mom - he wasn't targeted after a big Week 1
+
+![Nice](https://github.com/hockeyfan22/mackinawstats/raw/master/gersh.gif)
+
+## Sa' Quads vs. Sutton Aint Right
+Right 151 | Quads 119
+
+Sa'Quads? More like Sa'ACL! Just kidding about another man's livelihood. A normal performance from him probably makes this one close, but Drew runs away with this one with nice production from the RBs in Kamara and Sanders. After being knocked out of the Eliminator last week, Sutton Ain't Right is making a run for the crown the old fashioned way.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/VideoToGif_GIF.GIF)
+
+## Mike Mike vs. Fantasy Football Team
+Mike 111 | FFT 155
+
+FFT puts up the high this week, and moves to 2-0, while Mike Mike is eliminated from the eliminator. Mike boldly puts Ronald Jones, who hilariously should not be a professional running back, but it actually works out with Bridgewater playing like piss. But the rest of his team sucked too, and FFT gets a huge game from Jones and solid production from Mahomes for a solid outing.
+
+![Nice](https://images.app.goo.gl/8uXUxCCmu3bXA85h8)

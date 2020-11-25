@@ -1,0 +1,280 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/5/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+stuff = read_csv('https://evolving-hockey.com/session/5190de44635b0b4fff75a30c3eba4c3b/download/pgmchrt_tb_s_download?w=')
+```
+
+```{r}
+gamescore = jsonlite::fromJSON('https://api.hockeystatcards.com/webapi/get-gamescore-card/9135?y=1920&s=rs')
+```
+
+```{r}
+playerdata = gamescore$playerData
+
+playerdata = playerdata %>% 
+  mutate(Player = case_when(Player == "Mitchell Marner" ~ "Mitch Marner",
+                            Player == "Alexander Kerfoot" ~ "Alex Kerfoot",
+                            TRUE ~ Player))
+```
+
+
+
+```{r}
+reactable2 = stuff %>% 
+  filter(Team == "TOR") %>% 
+  left_join(playerdata, by = "Player") %>% 
+  mutate(A = A1+A2) %>% 
+  mutate(GameScore = as.numeric(GameScore),
+         `GameScore Avg` = as.numeric(gsAvg)) %>% 
+  select(Player, Position, "TOI" = TOI.x, GameScore, `GameScore Avg`, "xGF" = xgf, "xGA" = xga, G,A,"P" = Points)
+
+box_cols <- c("Player", "Position", "TOI", "G", "A","P")
+xg_cols <- c("xGF","xGA")
+gs_cols <- c("GameScore","GameScore Avg")
+```
+
+```{r}
+make_color_pal <- function(colors, bias = 1) {
+  get_color <- colorRamp(colors, bias = bias)
+  function(x) rgb(get_color(x), maxColorValue = 255)
+}
+
+off_rating_color <- make_color_pal(c("#ff2700", "#f8fcf8", "#44ab43"), bias = 1.3)
+def_rating_color <- make_color_pal(c("#ff2700", "#f8fcf8", "#44ab43"), bias = 0.6)
+```
+
+
+```{r}
+reactable(
+  reactable2,
+  pagination = FALSE,
+  showSortIcon = FALSE,
+  compact = TRUE,
+  defaultColDef = colDef(
+    headerStyle = list(
+      textAlign = "left",
+      fontSize = "11px",
+      lineHeight = "14px",
+      textTransform = "uppercase",
+      color = "#0c0c0c",
+      fontWeight = "500",
+      borderBottom = "2px solid #e9edf0",
+      paddingBottom = "3px",
+      verticalAlign = "bottom",
+      fontFamily = font_es
+    ),
+    style = list(
+      fontFamily = font_es,
+      fontSize = "14px",
+      verticalAlign = "center",
+      align = "left"
+    )
+  ),
+  defaultSorted = "GameScore",
+  defaultSortOrder = "desc",
+  defaultColGroup = colGroup(headerClass = "group-header"),
+  columnGroups = list(
+    colGroup(name = "Box Score", columns = box_cols),
+    colGroup(name = "xG Metrics", columns = xg_cols),
+    colGroup(name = "Game Score", columns = gs_cols)
+  ),
+  columns = list(
+            Player = colDef(
+      name = "Player",
+      maxWidth = 170),
+    Position = colDef(
+      name = "Position",
+      maxWidth = 70),
+    TOI = colDef(
+      name = "TOI",
+      maxWidth = 70,
+      align = "left"),
+    G = colDef(
+      name = "G",
+      align = "left",
+      maxWidth = 30),
+    A = colDef(
+      name = "A",
+      align = "left",
+      maxWidth = 30),
+    P = colDef(
+      name = "P",
+      align = "left",
+      maxWidth = 30),
+    GameScore = colDef(
+      name = "GameScore",
+      align = "left",
+      width = 70,
+      cell = function(value) {
+        scaled <- (value - min(reactable2$GameScore)) / (max(reactable2$GameScore) - min(reactable2$GameScore))
+        color <- off_rating_color(scaled)
+        value <- format(round(value, 1), nsmall = 1)
+        div(class = "spi-rating", style = list(background = color), value)
+      })))
+
+```
+
+```{css}
+.standings {
+  font-family: Karla, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+.title {
+  margin: 18px 0;
+  font-size: 16px;
+}
+.title h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.standings-table {
+  margin-bottom: 20px;
+}
+/* Align header text to the bottom */
+.header,
+.group-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.header {
+  border-bottom-color: #555;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+/* Highlight headers when sorting */
+.header:hover,
+.header[aria-sort="ascending"],
+.header[aria-sort="descending"] {
+  background-color: #eee;
+}
+.border-left {
+  border-left: 2px solid #555;
+}
+/* Use box-shadow to create row borders that appear behind vertical borders */
+.cell {
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+.group-last .cell {
+  box-shadow: inset 0 -2px 0 #555;
+}
+.team {
+  display: flex;
+  align-items: baseline;
+}
+.record {
+  margin-left: 5px;
+  color: #999;
+  font-size: 13px;
+}
+.team-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+.flag {
+  margin-right: 8px;
+  height: 21px;
+  border: 1px solid #f0f0f0;
+}
+.group {
+  font-size: 19px;
+}
+.number {
+  font-family: "Fira Mono", Consolas, Monaco, monospace;
+  font-size: 16px;
+  line-height: 30px;
+  white-space: pre;
+}
+.spi-rating {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 50%;
+  color: #000;
+  font-size: 13px;
+  letter-spacing: -2px;
+}
+```
+    
+    
+```{r}
+need = stuff %>% 
+  filter(Team == "TOR") %>% 
+  left_join(playerdata, by = "Player") %>% 
+  mutate(A = A1+A2) %>% 
+  mutate(GameScore = as.numeric(GameScore),
+         `GameScore Avg` = as.numeric(gsAvg)) %>% 
+  select(Player, Position, "TOI" = TOI.x, GameScore, "xGF" = xgf, "xGA" = xga, G,A,"P" = Points)
+```
+
+```{r}
+
+plot_bar <- function(data){
+  data_range <- need %>% 
+  pull(GameScore) %>%
+  range()
+  
+  yield_mean <- need %>%
+  summarize(GameScore = mean(GameScore))
+  
+  
+    yield_mean %>% 
+    ggplot() +
+    geom_col(aes(x = 1, y = GameScore), size = 5,
+             fill = "blue", color = "blue", width = 0.7) +
+    coord_flip() +
+    theme_void() +
+      ylim(-2,2) +
+    theme(legend.position = "none")
+}
+
+bar_yields <- need %>% 
+  nest(GameScore = GameScore) %>%
+  mutate(plot = map(GameScore, plot_bar))
+
+need %>% 
+  rowwise() %>%
+  mutate(
+    ggplot = NA
+  ) %>% 
+  gt() %>% 
+  text_transform(
+    locations = cells_body(vars(ggplot)),
+    fn = function(x){
+      map(bar_yields$plot, ggplot_image, height = px(15), aspect_ratio = 4)
+    }
+  ) %>% 
+  cols_width(vars(ggplot) ~ px(100)) %>%
+  cols_label(
+    ggplot = ""
+  ) %>%
+  tab_options(
+    row_group.border.top.width = px(3),
+    row_group.border.top.color = "black",
+    row_group.border.bottom.color = "black",
+    table_body.hlines.color = "white",
+    table.border.top.color = "white",
+    table.border.top.width = px(3),
+    table.border.bottom.color = "white",
+    table.border.bottom.width = px(3),
+    table_body.border.bottom.width = px(2),
+    table_body.border.bottom.color = "black",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(3)
+  ) %>%
+  tab_source_note("Table: @thomasmock | Data: OurWorldInData.org")
+  
+```
+

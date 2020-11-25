@@ -1,0 +1,255 @@
+---
+title: "nst"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+nst = read_csv('nstresults.csv')
+
+nst = nst %>% 
+  separate(Game, into = c("Date", "Score"), sep = " - ") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  group_by(Team) %>% 
+  mutate(game = row_number()) %>% 
+   mutate(abbreviation = case_when(Team == "Anaheim Ducks" ~ "ANA",
+                                  Team == "Arizona Coyotes" ~ "ARI",
+                                  Team == "Boston Bruins" ~ "BOS",
+                                  Team == "Buffalo Sabres" ~ "BUF",
+                                  Team == "Calgary Flames" ~ "CGY",
+                                  Team == "Carolina Hurricanes" ~ "CAR",
+                                  Team == "Chicago Blackhawks" ~ "CHI",
+                                  Team == "Colorado Avalanche" ~ "COL",
+                                  Team == "Columbus Blue Jackets" ~ "CBJ",
+                                  Team == "Dallas Stars" ~ "DAL",
+                                  Team == "Detroit Red Wings" ~ "DET",
+                                  Team == "Edmonton Oilers" ~ "EDM",
+                                  Team == "Florida Panthers" ~ "FLA",
+                                  Team == "Los Angeles Kings" ~ "LAK",
+                                  Team == "Minnesota Wild" ~ "MIN",
+                                  Team == "Montreal Canadiens" ~ "MTL",
+                                  Team == "Nashville Predators" ~ "NSH",
+                                  Team == "New Jersey Devils" ~ "NJD",
+                                  Team == "New York Islanders" ~ "NYI",
+                                  Team == "New York Rangers" ~ "NYR",
+                                  Team == "Ottawa Senators" ~ "OTT",
+                                  Team == "Philadelphia Flyers" ~ "PHI",
+                                  Team == "Pittsburgh Penguins" ~ "PIT",
+                                  Team == "San Jose Sharks" ~ "SJS",
+                                  Team == "St Louis Blues" ~ "STL",
+                                  Team == "Tampa Bay Lightning" ~ "TBL",
+                                  Team == "Toronto Maple Leafs" ~ "TOR",
+                                  Team == "Vancouver Canucks" ~ "VAN",
+                                  Team == "Vegas Golden Knights" ~ "VGK",
+                                  Team == "Washington Capitals" ~ "WSH",
+                                  Team == "Winnipeg Jets" ~ "WPG")) %>% 
+  mutate(division = case_when(abbreviation == "TBL" | abbreviation =="TOR" | abbreviation == "FLA" | abbreviation == "MTL" | abbreviation == "DET" | abbreviation == "BUF"| abbreviation == "BOS" | abbreviation == "OTT" ~ "Atlantic",
+         abbreviation == "WSH" | abbreviation =="NYI" | abbreviation == "PIT" | abbreviation == "CAR" | abbreviation == "CBJ" | abbreviation == "PHI" | abbreviation == "NYR" | abbreviation == "NJD" ~ "Metropolitan",
+         abbreviation == "NSH" | abbreviation =="WPG" | abbreviation == "STL" | abbreviation == "DAL" | abbreviation == "COL" | abbreviation == "CHI" | abbreviation == "MIN" ~ "Central",
+         abbreviation == "CGY" | abbreviation =="SJS" | abbreviation == "VGK" | abbreviation == "ARI" | abbreviation == "VAN" | abbreviation == "ANA" | abbreviation == "EDM" | abbreviation == "LAK" ~ "Pacific"))
+
+facets = nst %>% 
+  mutate(win = ifelse(GF>GA,1,0)) %>% 
+  group_by(abbreviation, division) %>% 
+  summarize(points = sum(win)) %>% 
+  ungroup() %>% 
+  group_by(division) %>% 
+  mutate(facet = rank(-points, ties.method = "first"))
+
+nst = nst %>% 
+  left_join(facets) %>% 
+  ungroup() %>% 
+  group_by(game) %>% 
+  mutate(diff = `xGF%` - 50)
+  
+  
+write_csv(nst, "nst4.csv")
+```
+```{r}
+nst = read_csv('nstresults.csv')
+
+nst = nst %>% 
+  separate(Game, into = c("Date", "Score"), sep = " - ") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  group_by(Team) %>% 
+  mutate(game = row_number()) %>% 
+   mutate(abbreviation = case_when(Team == "Anaheim Ducks" ~ "ANA",
+                                  Team == "Arizona Coyotes" ~ "ARI",
+                                  Team == "Boston Bruins" ~ "BOS",
+                                  Team == "Buffalo Sabres" ~ "BUF",
+                                  Team == "Calgary Flames" ~ "CGY",
+                                  Team == "Carolina Hurricanes" ~ "CAR",
+                                  Team == "Chicago Blackhawks" ~ "CHI",
+                                  Team == "Colorado Avalanche" ~ "COL",
+                                  Team == "Columbus Blue Jackets" ~ "CBJ",
+                                  Team == "Dallas Stars" ~ "DAL",
+                                  Team == "Detroit Red Wings" ~ "DET",
+                                  Team == "Edmonton Oilers" ~ "EDM",
+                                  Team == "Florida Panthers" ~ "FLA",
+                                  Team == "Los Angeles Kings" ~ "LAK",
+                                  Team == "Minnesota Wild" ~ "MIN",
+                                  Team == "Montreal Canadiens" ~ "MTL",
+                                  Team == "Nashville Predators" ~ "NSH",
+                                  Team == "New Jersey Devils" ~ "NJD",
+                                  Team == "New York Islanders" ~ "NYI",
+                                  Team == "New York Rangers" ~ "NYR",
+                                  Team == "Ottawa Senators" ~ "OTT",
+                                  Team == "Philadelphia Flyers" ~ "PHI",
+                                  Team == "Pittsburgh Penguins" ~ "PIT",
+                                  Team == "San Jose Sharks" ~ "SJS",
+                                  Team == "St Louis Blues" ~ "STL",
+                                  Team == "Tampa Bay Lightning" ~ "TBL",
+                                  Team == "Toronto Maple Leafs" ~ "TOR",
+                                  Team == "Vancouver Canucks" ~ "VAN",
+                                  Team == "Vegas Golden Knights" ~ "VGK",
+                                  Team == "Washington Capitals" ~ "WSH",
+                                  Team == "Winnipeg Jets" ~ "WPG")) %>% 
+  mutate(division = case_when(abbreviation == "TBL" | abbreviation =="TOR" | abbreviation == "FLA" | abbreviation == "MTL" | abbreviation == "DET" | abbreviation == "BUF"| abbreviation == "BOS" | abbreviation == "OTT" ~ "Atlantic",
+         abbreviation == "WSH" | abbreviation =="NYI" | abbreviation == "PIT" | abbreviation == "CAR" | abbreviation == "CBJ" | abbreviation == "PHI" | abbreviation == "NYR" | abbreviation == "NJD" ~ "Metropolitan",
+         abbreviation == "NSH" | abbreviation =="WPG" | abbreviation == "STL" | abbreviation == "DAL" | abbreviation == "COL" | abbreviation == "CHI" | abbreviation == "MIN" ~ "Central",
+         abbreviation == "CGY" | abbreviation =="SJS" | abbreviation == "VGK" | abbreviation == "ARI" | abbreviation == "VAN" | abbreviation == "ANA" | abbreviation == "EDM" | abbreviation == "LAK" ~ "Pacific"))
+
+facets = nst %>% 
+  mutate(win = ifelse(GF>GA,1,0)) %>% 
+  group_by(abbreviation, division) %>% 
+  summarize(points = sum(win)) %>% 
+  ungroup() %>% 
+  group_by(division) %>% 
+  mutate(facet = rank(-points, ties.method = "first"))
+
+nst = nst %>% 
+  left_join(facets) %>% 
+  ungroup() %>% 
+  group_by(game) %>% 
+  mutate(diff = `xGF%` - 50)
+  
+  
+write_csv(nst, "nst5.csv")
+```
+```{r}
+nst = read_csv('nstresults.csv')
+
+nst = nst %>% 
+  separate(Game, into = c("Date", "Score"), sep = " - ") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  group_by(Team) %>% 
+  mutate(game = row_number()) %>% 
+   mutate(abbreviation = case_when(Team == "Anaheim Ducks" ~ "ANA",
+                                  Team == "Arizona Coyotes" ~ "ARI",
+                                  Team == "Boston Bruins" ~ "BOS",
+                                  Team == "Buffalo Sabres" ~ "BUF",
+                                  Team == "Calgary Flames" ~ "CGY",
+                                  Team == "Carolina Hurricanes" ~ "CAR",
+                                  Team == "Chicago Blackhawks" ~ "CHI",
+                                  Team == "Colorado Avalanche" ~ "COL",
+                                  Team == "Columbus Blue Jackets" ~ "CBJ",
+                                  Team == "Dallas Stars" ~ "DAL",
+                                  Team == "Detroit Red Wings" ~ "DET",
+                                  Team == "Edmonton Oilers" ~ "EDM",
+                                  Team == "Florida Panthers" ~ "FLA",
+                                  Team == "Los Angeles Kings" ~ "LAK",
+                                  Team == "Minnesota Wild" ~ "MIN",
+                                  Team == "Montreal Canadiens" ~ "MTL",
+                                  Team == "Nashville Predators" ~ "NSH",
+                                  Team == "New Jersey Devils" ~ "NJD",
+                                  Team == "New York Islanders" ~ "NYI",
+                                  Team == "New York Rangers" ~ "NYR",
+                                  Team == "Ottawa Senators" ~ "OTT",
+                                  Team == "Philadelphia Flyers" ~ "PHI",
+                                  Team == "Pittsburgh Penguins" ~ "PIT",
+                                  Team == "San Jose Sharks" ~ "SJS",
+                                  Team == "St Louis Blues" ~ "STL",
+                                  Team == "Tampa Bay Lightning" ~ "TBL",
+                                  Team == "Toronto Maple Leafs" ~ "TOR",
+                                  Team == "Vancouver Canucks" ~ "VAN",
+                                  Team == "Vegas Golden Knights" ~ "VGK",
+                                  Team == "Washington Capitals" ~ "WSH",
+                                  Team == "Winnipeg Jets" ~ "WPG")) %>% 
+  mutate(division = case_when(abbreviation == "TBL" | abbreviation =="TOR" | abbreviation == "FLA" | abbreviation == "MTL" | abbreviation == "DET" | abbreviation == "BUF"| abbreviation == "BOS" | abbreviation == "OTT" ~ "Atlantic",
+         abbreviation == "WSH" | abbreviation =="NYI" | abbreviation == "PIT" | abbreviation == "CAR" | abbreviation == "CBJ" | abbreviation == "PHI" | abbreviation == "NYR" | abbreviation == "NJD" ~ "Metropolitan",
+         abbreviation == "NSH" | abbreviation =="WPG" | abbreviation == "STL" | abbreviation == "DAL" | abbreviation == "COL" | abbreviation == "CHI" | abbreviation == "MIN" ~ "Central",
+         abbreviation == "CGY" | abbreviation =="SJS" | abbreviation == "VGK" | abbreviation == "ARI" | abbreviation == "VAN" | abbreviation == "ANA" | abbreviation == "EDM" | abbreviation == "LAK" ~ "Pacific"))
+
+facets = nst %>% 
+  mutate(win = ifelse(GF>GA,1,0)) %>% 
+  group_by(abbreviation, division) %>% 
+  summarize(points = sum(win)) %>% 
+  ungroup() %>% 
+  group_by(division) %>% 
+  mutate(facet = rank(-points, ties.method = "first"))
+
+nst = nst %>% 
+  left_join(facets) %>% 
+  ungroup() %>% 
+  group_by(game) %>% 
+  mutate(diff = `xGF%` - 50)
+  
+  
+write_csv(nst, "nst16.csv")
+```
+```{r}
+nst = read_csv('results117.csv')
+
+nst = nst %>% 
+  separate(Game, into = c("Date", "Score"), sep = " - ") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  group_by(Team) %>% 
+  mutate(game = row_number()) %>% 
+   mutate(abbreviation = case_when(Team == "Anaheim Ducks" ~ "ANA",
+                                  Team == "Arizona Coyotes" ~ "ARI",
+                                  Team == "Boston Bruins" ~ "BOS",
+                                  Team == "Buffalo Sabres" ~ "BUF",
+                                  Team == "Calgary Flames" ~ "CGY",
+                                  Team == "Carolina Hurricanes" ~ "CAR",
+                                  Team == "Chicago Blackhawks" ~ "CHI",
+                                  Team == "Colorado Avalanche" ~ "COL",
+                                  Team == "Columbus Blue Jackets" ~ "CBJ",
+                                  Team == "Dallas Stars" ~ "DAL",
+                                  Team == "Detroit Red Wings" ~ "DET",
+                                  Team == "Edmonton Oilers" ~ "EDM",
+                                  Team == "Florida Panthers" ~ "FLA",
+                                  Team == "Los Angeles Kings" ~ "LAK",
+                                  Team == "Minnesota Wild" ~ "MIN",
+                                  Team == "Montreal Canadiens" ~ "MTL",
+                                  Team == "Nashville Predators" ~ "NSH",
+                                  Team == "New Jersey Devils" ~ "NJD",
+                                  Team == "New York Islanders" ~ "NYI",
+                                  Team == "New York Rangers" ~ "NYR",
+                                  Team == "Ottawa Senators" ~ "OTT",
+                                  Team == "Philadelphia Flyers" ~ "PHI",
+                                  Team == "Pittsburgh Penguins" ~ "PIT",
+                                  Team == "San Jose Sharks" ~ "SJS",
+                                  Team == "St Louis Blues" ~ "STL",
+                                  Team == "Tampa Bay Lightning" ~ "TBL",
+                                  Team == "Toronto Maple Leafs" ~ "TOR",
+                                  Team == "Vancouver Canucks" ~ "VAN",
+                                  Team == "Vegas Golden Knights" ~ "VGK",
+                                  Team == "Washington Capitals" ~ "WSH",
+                                  Team == "Winnipeg Jets" ~ "WPG")) %>% 
+  mutate(division = case_when(abbreviation == "TBL" | abbreviation =="TOR" | abbreviation == "FLA" | abbreviation == "MTL" | abbreviation == "DET" | abbreviation == "BUF"| abbreviation == "BOS" | abbreviation == "OTT" ~ "Atlantic",
+         abbreviation == "WSH" | abbreviation =="NYI" | abbreviation == "PIT" | abbreviation == "CAR" | abbreviation == "CBJ" | abbreviation == "PHI" | abbreviation == "NYR" | abbreviation == "NJD" ~ "Metropolitan",
+         abbreviation == "NSH" | abbreviation =="WPG" | abbreviation == "STL" | abbreviation == "DAL" | abbreviation == "COL" | abbreviation == "CHI" | abbreviation == "MIN" ~ "Central",
+         abbreviation == "CGY" | abbreviation =="SJS" | abbreviation == "VGK" | abbreviation == "ARI" | abbreviation == "VAN" | abbreviation == "ANA" | abbreviation == "EDM" | abbreviation == "LAK" ~ "Pacific"))
+
+facets = nst %>% 
+  mutate(win = ifelse(GF>GA,1,0)) %>% 
+  group_by(abbreviation, division) %>% 
+  summarize(points = sum(win)) %>% 
+  ungroup() %>% 
+  group_by(division) %>% 
+  mutate(facet = rank(-points, ties.method = "first"))
+
+nst = nst %>% 
+  left_join(facets) %>% 
+  ungroup() %>% 
+  group_by(game) %>% 
+  mutate(diff = `xGF%` - 50)
+  
+  
+write_csv(nst, "nst117r.csv")
+```
+

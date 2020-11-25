@@ -1,0 +1,129 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "7/3/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(awtools)
+
+library(showtext)
+library(extrafont)
+library(ggrepel)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+data = read_csv('https://evolving-hockey.com/session/b39ce3d5329efdb861ed61b9e760ecf0/download/std_c3_download?w=')
+```
+
+```{r}
+data %>% 
+  mutate(player1 = gsub("[:a-z:]","",`Player 1`)) %>% 
+  mutate(player2 = gsub("[:a-z:]","",`Player 2`)) %>% 
+  mutate(player3 = gsub("[:a-z:]","",`Player 3`)) %>% 
+  mutate(player1 = gsub(" ", "", player1)) %>% 
+  mutate(player2 = gsub(" ", "", player2)) %>% 
+  mutate(player3 = gsub(" ", "", player3)) %>% 
+  mutate(line = paste(`player1`,`player2`,`player3`, sep = "/")) %>% 
+  filter(GP>10) %>% 
+  ggplot(aes(`xGF/60`,`xGA/60`)) +
+  geom_vline(xintercept = 2.65, color = "orange", alpha = 0.4) +
+  geom_hline(yintercept = 2.29, color = "orange", alpha = 0.4) +
+  geom_point(aes(size = TOI), alpha = 0.8, fill = "white", shape = 21, stroke = 1.5, color = "navy blue") +
+  awtools::a_plex_theme() +
+  geom_text_repel(aes(label = line), size = 3, force = 12, point.padding = 0.15) +
+  ylim(1,4) +
+  xlim(1,4) +
+  theme(legend.position = "none") +
+  labs(title = "Leafs Forward Lines, Expected Goals", subtitle = "5v5 data, adjusted for score and venue. Data from @Evolving Hockey")
+
+ggsave('leafslines.pdf')
+```
+```{r}
+data %>% 
+  mutate(player1 = gsub("[:a-z:]","",`Player 1`)) %>% 
+  mutate(player2 = gsub("[:a-z:]","",`Player 2`)) %>% 
+  mutate(player3 = gsub("[:a-z:]","",`Player 3`)) %>% 
+  mutate(player1 = gsub(" ", "", player1)) %>% 
+  mutate(player2 = gsub(" ", "", player2)) %>% 
+  mutate(player3 = gsub(" ", "", player3)) %>% 
+  mutate(line = paste(`player1`,`player2`,`player3`, sep = "/")) %>% 
+  filter(GP>10) %>% 
+  ggplot(aes(`CF/60`,`CA/60`)) +
+  geom_vline(xintercept = 63, color = "orange", alpha = 0.4) +
+  geom_hline(yintercept = 54, color = "orange", alpha = 0.4) +
+  geom_point(aes(size = TOI), alpha = 0.8, fill = "white", shape = 21, stroke = 1.5, color = "navy blue") +
+  awtools::a_plex_theme() +
+  geom_text_repel(aes(label = line), size = 3, force = 12, point.padding = 0.15) +
+  theme(legend.position = "none") +
+  labs(title = "Leafs Forward Lines, Corsi", subtitle = "5v5 data, adjusted for score and venue. Data from @Evolving Hockey")
+
+ggsave('leafslines2.pdf')
+```
+```{r}
+data %>% 
+  mutate(center = case_when(`Player 1` == "Auston Matthews" | `Player 2` == "Auston Matthews" | `Player 3` == "Auston Matthews" ~ "Auston Matthews",
+                            `Player 1` == "John Tavares" | `Player 2` == "John Tavares" | `Player 3` == "John Tavares" ~ "John Tavares",
+                            `Player 1` == "Alex Kerfoot" | `Player 2` == "Alex Kerfoot" | `Player 3` == "Alex Kerfoot" ~ "Alex Kerfoot",
+                            `Player 1` == "Jason Spezza" | `Player 2` == "Jason Spezza" | `Player 3` == "Jason Spezza" ~ "Jason Spezza",
+                            `Player 1` == "Frederik Gauthier" | `Player 2` == "Frederik Gauthier" | `Player 3` == "Frederik Gauthier" ~ "Frederik Gauthier",)) %>% 
+  filter(!is.na(center)) %>% 
+  mutate(line = paste(`Player 1`, `Player 2`, `Player 3`, sep = "-")) %>% 
+  mutate(line = fct_reorder(line, -TOI)) %>% 
+  ggplot(aes(line,`xGF%`)) +
+  geom_point(aes(size = TOI), alpha = 0.8, fill = "white", shape = 21, stroke = 1.5, color = "navy blue") + 
+  facet_wrap(~center, scales = "free_x") +
+  awtools::a_plex_theme() +
+  theme(legend.position = "none") +
+  labs(title = "Leafs' Centers xGF%", subtitle = "5v5 data, adjusted for score and venue. Data from @Evolving Hockey") 
+
+ggsave('leafsline3.pdf', width = 12)
+```
+```{r}
+data %>% 
+  mutate(center = case_when(`Player 1` == "Auston Matthews" | `Player 2` == "Auston Matthews" | `Player 3` == "Auston Matthews" ~ "Auston Matthews",
+                            `Player 1` == "John Tavares" | `Player 2` == "John Tavares" | `Player 3` == "John Tavares" ~ "John Tavares",
+                            `Player 1` == "Alex Kerfoot" | `Player 2` == "Alex Kerfoot" | `Player 3` == "Alex Kerfoot" ~ "Alex Kerfoot",
+                            `Player 1` == "Jason Spezza" | `Player 2` == "Jason Spezza" | `Player 3` == "Jason Spezza" ~ "Jason Spezza",
+                            `Player 1` == "Frederik Gauthier" | `Player 2` == "Frederik Gauthier" | `Player 3` == "Frederik Gauthier" ~ "Frederik Gauthier",)) %>% 
+  filter(!is.na(center)) %>% 
+  mutate(line = paste(`Player 1`, `Player 2`, `Player 3`, sep = "-")) %>% 
+  mutate(line = fct_reorder(line, -TOI)) %>% 
+  select(center, TOI, `xGF%`, `Player 1`, `Player 2`, `Player 3`) %>% 
+  arrange(center)
+```
+```{r}
+data %>% 
+  mutate(player1 = gsub("[:a-z:]","",`Player 1`)) %>% 
+  mutate(player2 = gsub("[:a-z:]","",`Player 2`)) %>% 
+  mutate(player3 = gsub("[:a-z:]","",`Player 3`)) %>% 
+  mutate(player1 = gsub(" ", "", player1)) %>% 
+  mutate(player2 = gsub(" ", "", player2)) %>% 
+  mutate(player3 = gsub(" ", "", player3)) %>% 
+  mutate(line = paste(`player1`,`player2`,`player3`, sep = "/")) %>% 
+  filter(GP>10) %>% 
+  ggplot(aes(`GF%`,`xGF%`)) +
+  geom_vline(xintercept = 50, color = "orange", alpha = 0.4) +
+  geom_hline(yintercept = 50, color = "orange", alpha = 0.4) +
+  geom_point(aes(size = TOI), alpha = 0.8, fill = "white", shape = 21, stroke = 1.5, color = "navy blue") +
+  awtools::a_plex_theme() +
+  geom_text_repel(aes(label = line), size = 3, force = 12, point.padding = 0.15) +
+  ylim(0,100) +
+  xlim(0,100) +
+  theme(legend.position = "none") +
+  labs(title = "Leafs Forward Lines, xGF% vs. GF%", subtitle = "5v5 data, adjusted for score and venue. Data from @Evolving Hockey")
+```
+

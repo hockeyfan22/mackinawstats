@@ -1,0 +1,201 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "7/15/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+remotes::install_github("timelyportfolio/dataui")
+library(dataui)
+library(reactable)
+```
+```{r}
+am = read_csv('https://evolving-hockey.com/session/8e81782e9c265e36f88c990ad17c8dc7/download/sglog_download?w=')
+wn = read_csv('https://evolving-hockey.com/session/8e81782e9c265e36f88c990ad17c8dc7/download/sglog_download?w=')
+mm = read_csv('https://evolving-hockey.com/session/8e81782e9c265e36f88c990ad17c8dc7/download/sglog_download?w=')
+jt = read_csv('https://evolving-hockey.com/session/8e81782e9c265e36f88c990ad17c8dc7/download/sglog_download?w=')
+```
+
+```{r}
+boys = am %>% 
+  rbind(wn,mm,jt) %>% 
+  filter(Date != "Total") %>% 
+  group_by(Player) %>% 
+  mutate(game = row_number()) %>% 
+  ungroup()
+```
+
+```{r}
+nesty = boys %>% 
+  select(Player, game, iCF, ixG) %>% 
+  as.list() %>% 
+  nest(Line = c(game,iCF), Bar = c(game,ixG))
+```
+
+```{r}
+
+rt1 <- reactable(
+  nesty,
+  columns = list(
+    Line = colDef(
+      # use reactable very convenient conversion of htmlwidgets
+      #  we will focus on this in another article
+      #  more details on custom rendering
+      #  https://glin.github.io/reactable/articles/custom-rendering.html
+      cell = function(value, index) {
+        dui_sparkline(
+          data = value[[1]], # because we gave it a list use [[1]]
+          height = 80, # we will want to be specific here
+          components = dui_sparklineseries()
+        )
+      }
+    )
+    
+    )
+  )
+
+rt1
+```
+
+
+
+```{r}
+# this is a very ugly way of creating a data.frame with lists
+df1 <- data.frame(
+  Group = LETTERS[1:5],
+  Line =- NA,
+  Bar = NA,
+  stringsAsFactors = FALSE # I know 4.0 means no more of this
+)
+df1$Line <- lapply(1:5, function(x) list(runif(30)))
+df1$Bar <- lapply(1:5, function(x) list(rnorm(40, mean = x, sd = 2)))
+
+# to use same x scale we will calculate bins and use later
+bins <- hist(unlist(df1$Bar), breaks = 20, plot = FALSE)$breaks
+
+rt1 <- reactable(
+  df1,
+  columns = list(
+    Line = colDef(
+      # use reactable very convenient conversion of htmlwidgets
+      #  we will focus on this in another article
+      #  more details on custom rendering
+      #  https://glin.github.io/reactable/articles/custom-rendering.html
+      cell = function(value, index) {
+        dui_sparkline(
+          data = value[[1]], # because we gave it a list use [[1]]
+          height = 80, # we will want to be specific here
+          components = dui_sparklineseries()
+        )
+      }
+    ),
+    Bar = colDef(
+      cell = function(value, index) {
+        dui_sparkline(
+          data = hist(value[[1]], breaks=bins, plot=FALSE)$density,
+          height = 80,
+          component = dui_sparkbarseries()
+        )
+      }
+    )
+  )
+)
+rt1
+```
+
+```{r}
+test = boys %>% 
+  filter(Player == "Auston Matthews") %>% 
+  select("x" = game, "y" = is)
+
+dui_sparkline(
+  data = lapply(1:25, function(i) {
+    list(
+      x = paste0("Day ", i),
+      y = runif(1, 0, 2)
+    )
+  }),
+  valueAccessor = htmlwidgets::JS("d => d.y"),
+  width = 500,
+  height = 100,
+  margin = list( top= 24, right= 64, bottom= 24, left= 64 ),
+  ariaLabel = "sparkline example",
+  components = list(
+    dui_sparklineseries(
+      stroke = "#f06595"
+    ),
+    dui_sparkpointseries(
+      points = list("all"),
+      stroke = "#f06595",
+      fill = "#f06595",
+      size = 3
+    ),
+    dui_sparkpointseries(
+      points = list("min","max"),
+      fill = "#fcc419",
+      stroke = "#fff",
+      renderLabel = htmlwidgets::JS("d => d.toFixed(2)"),
+      labelPosition = "right",
+      size = 5
+    ),
+    dui_tooltip(
+      components = list(
+        dui_sparkverticalrefline(
+          key = "ref-line",
+          strokeWidth = 1,
+          strokeDasharray = "4 4"
+        ),
+        dui_sparkpointseries(
+          key = "ref-point",
+          fill = "#fff",
+          stroke = "#f06595"
+        )
+      )
+    )
+  )
+)
+```
+```{r}
+am2 = am %>% filter(Date != "Total")
+listy = am2$ixG
+```
+```{r}
+# responsive is turned on by default so in R
+#   to see if it is working resize your browser window
+dui_sparkline(
+  data = lapply(1:25, function(i) {
+    list(
+      x = paste0("Day ", i),
+      y = runif(1, 0, 2)
+    )
+  }),
+  valueAccessor = htmlwidgets::JS("d => d.y"),
+  width = "90%",
+  height = 100,
+  margin = list( top= 10, right= 10, bottom= 10, left= 10 ),
+  ariaLabel = "sparkline example",
+  components = list(
+    dui_sparkpatternlines(
+      id = "area_pattern2",
+      height = 4,
+      width = 4,
+      stroke = "#91a7ff",
+      strokeWidth = 1,
+      orientation = "diagonal"
+    ),
+    dui_sparklineseries(
+      showArea = TRUE,
+      stroke = "#91a7ff",
+      fill = "url(#area_pattern2)"
+    )
+  )
+)
+```
+

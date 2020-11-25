@@ -1,0 +1,204 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "5/10/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(tidyverse)
+library(purrr)
+
+urly = 'https://www.capfriendly.com/browse/active'
+
+webpage <- read_html("https://www.capfriendly.com/browse/active")
+
+tbls <- html_nodes(webpage, "table")
+
+test = 'https://www.capfriendly.com/browse/active&p=2'
+```
+```{r}
+salaries <- webpage %>%
+        html_nodes("table") %>%
+        .[1] %>%
+        html_table(fill = TRUE)
+```
+
+```{r}
+salaries
+```
+```{r}
+list_of_pages <- str_c(urly, '?p=', 1:28)
+```
+
+```{r}
+get_salaries = function (url) {
+  url %>% 
+  read_html() %>% 
+    html_nodes("table") %>%
+        .[1] %>%
+        html_table(fill = TRUE) %>% 
+    .[[1]]
+}
+```
+
+```{r}
+get_salaries(url)
+```
+
+```{r}
+salary_data = list_of_pages %>% 
+  map(get_salaries) %>% 
+  plyr::rbind.fill()
+```
+
+
+```{r}
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+atlantic = c('TOR','TBL','BUF','BOS','DET','FLA','MTL','OTT')
+
+norms = salary_data %>% 
+  mutate_at(c('AGE', 'GP','G','A','P', 'P/GP'), as.numeric) %>% 
+  mutate(caphit = as.numeric(gsub('[$,]', '', `CAP HIT`))) %>% 
+  mutate(caphit = caphit/1000000) %>% 
+  filter(GP>30) %>% 
+  filter(TEAM != "-") %>% 
+  filter(TEAM %in% atlantic) %>% 
+  filter(caphit<=8) %>% 
+  mutate(TEAM = factor(TEAM, levels = c('TOR','TBL','BUF','BOS','DET','FLA','MTL','OTT'))) %>% 
+  arrange(desc(caphit)) %>% 
+  mutate(`P/GP` = if_else(is.na(`P/GP`),0.3,`P/GP`))
+
+studs = salary_data %>% 
+  mutate_at(c('AGE', 'GP','G','A','P', 'P/GP'), as.numeric) %>% 
+  mutate(caphit = as.numeric(gsub('[$,]', '', `CAP HIT`))) %>% 
+  mutate(caphit = caphit/1000000) %>% 
+  filter(GP>30) %>% 
+  filter(TEAM != "-") %>% 
+  filter(TEAM %in% atlantic) %>% 
+  filter(caphit>8) %>% 
+  mutate(TEAM = factor(TEAM, levels = c('TOR','TBL','BUF','FLA','MTL','BOS','DET','OTT'))) %>% 
+  arrange(desc(caphit)) %>% 
+  mutate(`P/GP` = if_else(is.na(`P/GP`),0.3,`P/GP`))
+
+norms %>% 
+  ggplot(aes(caphit, `P/GP`)) +
+  geom_point(color = "grey",size = 2.3, alpha = 0.7) +
+  geom_point(data = studs, aes(color = TEAM, size = 3),fill = "white", size = 5, shape = 21, stroke = 1.5) +
+  scale_color_manual(values = c("#00205B","#002868","#FCB514", "#C8102E","#AF1E2D")) +
+  facet_wrap(~TEAM, ncol = 3) +
+  awtools::a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(x = 'Cap Hit ($M)')
+
+ggsave('plotyyy.pdf', height = 6, width = 11)
+  
+
+```
+```{r}
+table = salary_data %>% 
+  mutate_at(c('AGE', 'GP','G','A','P', 'P/GP'), as.numeric) %>% 
+  mutate(caphit = as.numeric(gsub('[$,]', '', `CAP HIT`))) %>% 
+  mutate(caphit = caphit/1000000) %>%
+  filter(TEAM != "-") %>% 
+  filter(TEAM %in% atlantic) %>%  
+  arrange(desc(caphit)) %>%
+  head(15) %>% 
+  mutate(Player = sub(".*? ", "", PLAYER)) %>% 
+  select(Player, "Team" = TEAM, "Salary" = caphit, `P/GP`) %>% 
+  gt() %>% 
+  data_color(
+    columns = vars(Salary),
+    colors = scales::col_numeric(
+      # custom defined values - notice that order matters!
+      palette = c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab"),
+      domain = NULL
+    )
+  ) %>%
+  data_color(
+    columns = vars(`P/GP`),
+    colors = scales::col_numeric(
+      # custom defined values - notice that order matters!
+      palette = c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab"),
+      domain = NULL
+    )
+  ) %>% 
+  fmt_currency(
+    # Define the columns to change
+    columns = vars(Salary),
+    # How many decimals to round to
+    decimals = 1,
+    # glue style pattern match & string conversion
+    pattern = "{x} M") %>% 
+   tab_style(
+    style = list(
+      cell_borders(
+        sides = "left",
+        color = "black",
+        weight = px(3)
+      )
+    ),
+    locations = list(
+      cells_body(
+        columns = vars(Salary)
+      )
+    )
+  ) %>%
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "bottom",
+        color = "black",
+        weight = px(3)
+      )
+    ),
+    locations = list(
+      cells_column_labels(
+        columns = gt::everything()
+      )
+    )
+  ) %>% 
+  tab_source_note("TABLE: @MackinawStats | DATA: CapFriendly") %>%
+  tab_header(
+    title = md("**Top Atlantic Division Salaries**"),
+    subtitle = "Leafs players take several of the top slots"
+  )
+
+gtsave(table, "salarytable.png")
+```
+```{r}
+salary_data %>% 
+  mutate(caphit = as.numeric(gsub('[$,]', '', `CAP HIT`))) %>% 
+  group_by(TEAM) %>% 
+  summarize(Gini = gini(caphit)*100)
+```
+
+
+```{r}
+salaryd3 = salary_data %>% 
+  mutate(Player = sub(".*? ", "", PLAYER)) %>% 
+  select(Player, TEAM, `CAP HIT`) %>% 
+  mutate(caphit = as.numeric(gsub('[$,]', '', `CAP HIT`))) %>% 
+  select(Player, "Team" = TEAM, caphit) %>% 
+  mutate(budget = rep("Budget"))
+
+write_csv(salaryd3, "salaryd33.csv")
+```
+

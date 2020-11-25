@@ -1,0 +1,114 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "4/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rvest)
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+datacounts = read_csv('EH_std_sk_stats_all_regular_no_adj_2020-05-04.csv')
+datarates = read_csv('EH_std_sk_stats_5v5_regular_adj_2020-05-04.csv')
+  
+data = datacounts %>% 
+  full_join(datarates, by = c('Player','Season')) %>% 
+  select(Player,Position.x,Season,Team.x,GP.x,TOI.x,`Points/60`, `G/60`,`iCF/60`, `ixG/60`,`Sh%.x`, `xFSh%`, `GF%`, `CF%`, `xGF%`, `GF/60`,`CF/60`, `GA/60`, `CA/60`, `xGF/60`, `xGA/60`)
+
+#individual: Points/60, Goals/60, iCF/60, ixG/60
+#context: GF/60, xGF/60, CF/60
+```
+```{r}
+#individual chart
+
+idata = data %>% 
+  select(Player,Position.x,Season,Team.x,GP.x,TOI.x, `Points/60`, `G/60`,`iCF/60`,`ixG/60`) %>% 
+  gather(key = "metric", value = "value", `Points/60`, `G/60`,`iCF/60`,`ixG/60`) %>% 
+  filter(Position.x != "D") %>% 
+  filter(GP.x>30)
+  
+
+player = idata %>% 
+  filter(Player == "Kasperi Kapanen")
+```
+
+```{r}
+idata %>% 
+  ggplot(aes(Season,value)) +
+  ggbeeswarm::geom_quasirandom(color = "grey", alpha = 0.5) +
+  geom_point(data = player, color = "cornflower blue", size = 4) +
+  facet_wrap(~metric, scales = "free") +
+  awtools::a_plex_theme(grid = FALSE) +
+  labs(title = "Kasperi Kapanen Production", subtitle = "Data from Evolving Hockey", x = "", y = "")
+
+ggsave('kapi.pdf')
+```
+
+```{r}
+data %>% 
+  filter(Position.x != "D") %>% 
+  filter(GP.x>30) %>% 
+  group_by(Season) %>% 
+  select(Player,Position.x,Season,Team.x,GP.x,TOI.x, `Points/60`, `G/60`,`iCF/60`,`ixG/60`) %>% 
+  mutate(p60rank = rank(-`Points/60`),
+         g60rank = rank(-`G/60`),
+         icfrank = rank(-`iCF/60`),
+         ixgrank = rank(-`ixG/60`)) %>% 
+  filter(Player == "Kasperi Kapanen")
+
+
+```
+```{r}
+#context chart
+
+idata = data %>% 
+  select(Player,Position.x,Season,Team.x,GP.x,TOI.x, `GF/60`,`CF/60`, `xGF/60`) %>% 
+  gather(key = "metric", value = "value", `GF/60`,`CF/60`, `xGF/60`) %>% 
+  filter(Position.x != "D") %>% 
+  filter(GP.x>30)
+  
+
+player = idata %>% 
+  filter(Player == "Kasperi Kapanen")
+```
+
+```{r}
+idata %>% 
+  ggplot(aes(Season,value)) +
+  ggbeeswarm::geom_quasirandom(color = "grey", alpha = 0.5) +
+  geom_point(data = player, color = "cornflower blue", size = 4) +
+  facet_wrap(~metric, scales = "free") +
+  awtools::a_plex_theme(grid = FALSE) +
+  labs(title = "Kasperi Kapanen On-Ice Results", subtitle = "Data from Evolving Hockey", x = "", y = "")
+
+ggsave('kap2.pdf', height = 4, width = 7)
+
+```
+
+```{r}
+data %>% 
+  filter(Position.x != "D") %>% 
+  filter(GP.x>30) %>% 
+  group_by(Season) %>% 
+   select(Player,Position.x,Season,Team.x,GP.x,TOI.x, `GF/60`,`CF/60`, `xGF/60`) %>% 
+  mutate(gfrank = rank(-`GF/60`),
+         cfrank = rank(-`CF/60`),
+         xgrank = rank(-`xGF/60`)) %>% 
+  filter(Player == "Kasperi Kapanen")
+
+```

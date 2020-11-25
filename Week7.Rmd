@@ -1,0 +1,74 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "10/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<center>
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/header.PNG)
+# Swag League Week 7 Recap
+
+Welcome to the week 7 edition of the Swag League Weekly Recap - I hope these are a fun way to keep track of scores and highlights from the league. Remember to pay your dues on venmo - enjoy!
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/scoreboardw7.PNG)
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/matrixw7.PNG)
+
+
+</center>
+
+***
+## Eliminator Challenge: RIP Beterson
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/IMG_7198.PNG)
+Mr. BramRober Beterson, son of the late Kenneth Whisenhunt, was born June 9, 2008 in Jackson, Wyoming. As part of his midlife crisis, Beterson upped roots and moved to Brooklyn, NY and soley referred to himself as a "Crooklyn Dodger". He lost a lot of local friends for this reason and resorted to participating in Swag League with his upstate friends. He still shouts his late father's name when making beer pong shots - which he's been practicing avidly in quarantine. RIP.
+
+Previous Eliminator Victims: AE | ZB | MG | AG | AK | AP
+Remaining Eliminator Participants: RG | ZK | WS | JR | DF
+
+## Dale Drangus vs. Fantasy Football Team
+Drangus 137 | FFT 94
+
+FFT is having a rough go - eliminated last week and dethroned this week. My team was pretty dope - picking up a lazy and inept OBJ who missed his projection by 11 points. Mahomes is looking more like a Mahoe with a 12 point dudd performance and Andy Dalton was diagnosed with CTE on the spot of the foul in a tough game against WSH. Ben Roethliscock has been a little sketchy of late, but JRob and Chef Rusty have some big games in the W.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/IMG_7202.PNG)
+
+## Mirjam Poterbin vs. Scorekeeper Jeff
+Mirjam 148 | Jeff 95
+
+Wonki wins embarrasingly again, refusing to sit domestic abusers Tyreek Hill and Tom Brady, and luckily profiting off of a blind autodraft in A.J. Brown who appears to be a dominant WR1 option. The luck of the irish via Tim O'Connor appears to be rubbing off on Mirjam. Cam Newton was the leading scorer for the team with -0.3 points - I'm just upset I can't be around my friends complain about a Patriots team that is finally bad. Jeff is back on the Chews after some tough RB play but McCaffrey seems close to playing soon.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/IMG_7204.PNG)
+
+## Put It In Reverse Terry vs. A good day to ken whisenhunt
+Terry 115 | Whisenhunt 99
+
+As mentioned, Whisenhunt Jr was eliminated in this one and joined the midstandings lump. Counting on Nick Foles for anything is usually a mistake, and he came up with quite the dud on Monday night, with a 6 point performance. DK Metcalf made a great play to chase down a Cardinals player after an interception, but this is Swag League, an we don't award points for those kind of plays. Big game from Joe Burrow who was ZKron's leading scorer for the week.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/IMG_7203.PNG)
+
+## Judge Jeudy vs. Straight Outta Hopkin
+Jeudy 147 | Hopkin 121
+
+Judge Herbert is in the house with a near 40 burger against Jax, helping Akron prevail. Lockett had an actual 40 burger against the Cards but Hopkin's QB struggled outside of that with 7 from Jimmy G, and 13 from Drew Lock. Josh has definitely kept things simple this year, with a total of 2 roster moves according to the standing page - but simple can be good (or at least better than Zach B, who has made 32 moves, and is languishing in last place).
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/IMG_7199.PNG)
+
+## Tomlin's Fist Pump Supply vs. Everything is Doing Fine
+Tomlin 157 | Fine 89
+
+Tomlin was due for some reversion after a weak performance last week - and crushed the league's favorite punching bag. The Saints, I mean Tomlin's First Pump Supply, gets some solid games from MayField, Brees, and Kamara and joins the tie for first at the top of the league. Did I mention Zach's made 32 roster moves but is still in last? He's made more moves than points he got from his 2 RBs and flex! Lol.
+
+![Nice](https://github.com/hockeyfan22/swagleague/raw/master/IMG_7203.PNG)
+)
+
+## Mike Mike vs. Thomas the Tank Engine
+Mike Mike 145 | Thomas 142
+
+The closest matchup of the week, Mike prevails on Monday night with Darrel Henderson coming up short against Chicago. The Rodgers/Adams connection was in full effect for Mike, for a cool 65 points. Dev was hungry for some trades this week - wheeling and dealing some of his damaged goods - but he came up short and falls to 3-4.
+
+![Nice](https://github.com/hockeyfan22/swagleague/blob/master/IMG_7200.PNG)

@@ -1,0 +1,66 @@
+---
+title: "andersen"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+am1920 = read_csv('https://evolving-hockey.com/session/b212313d23e46683c67f686f8cd92c6c/download/gglog_download?w=')
+am1819 = read_csv('https://evolving-hockey.com/session/b212313d23e46683c67f686f8cd92c6c/download/gglog_download?w=')
+am1718 = read_csv('https://evolving-hockey.com/session/c5b73f8c3131df57ddce79976fd3cb9a/download/gglog_download?w=')
+am1617 = read_csv('https://evolving-hockey.com/session/c5b73f8c3131df57ddce79976fd3cb9a/download/gglog_download?w=')
+am1516 = read_csv('https://evolving-hockey.com/session/c5b73f8c3131df57ddce79976fd3cb9a/download/gglog_download?w=')
+```
+```{r}
+plot = am1920 %>% 
+  rbind(am1819,am1718,am1617,am1516) %>% 
+  mutate(Season = case_when(Season == 20192020 ~ 2020,
+                            Season == 20182019 ~ 2019,
+                            Season == 20172018 ~ 2018,
+                            Season == 20162017 ~ 2017,
+                            Season == 20152016 ~ 2016)) %>% 
+  mutate(Season = as.factor(Season)) %>% 
+  filter(Season != 2016) %>% 
+  filter(Date != "Total") %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  group_by(Season) %>% 
+  mutate(rollsvp = rollmean(`Sv%`,5,na.pad = TRUE, align = "right")) %>% 
+  mutate(game = row_number()) %>% 
+
+ggplot(data = plot,aes(game,rollsvp)) +
+  geom_point(data=select(plot,-Season), colour="grey") +
+  geom_point(size = 1.5, aes(color = Season)) +
+  facet_wrap(~Season)
+```
+
+```{r}
+plot$Season2 <- plot$Season
+
+ggplot(plot, aes(game,rollsvp, group=Season)) + 
+  geom_line(data=plot %>% select(-Season), aes(game, rollsvp, group=Season2), colour="grey") +
+  geom_line(size = 1.5, color = "#00205B") + 
+  facet_wrap(~ Season) +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Freddie Andersen's Struggles", subtitle = "Freddie Andersen has been struggling recently, but has shown the ability to bounce back \nin previous seasons. In 2017 and 2019 his rolling 5 game save percentage dipped below \n.830 before recovering to higher levels.", caption = "chart by @MackinawStats, data from @EvolvingHockey",x = "Game", y = "SV% (Rolling)") +
+  ylim(82,100)
+
+ggsave("fred.pdf")
+```
+```{r}
+ggplot(plot, aes(game,rollsvp, group=Season)) +
+  geom_hline(yintercept = .910) +
+  geom_line(data=plot %>% select(-Season), aes(game, rollsvp, group=Season2), colour="grey") +
+  geom_line(size = 1.5, color = "#00205B") + 
+  facet_wrap(~ Season, nrow = 1) +
+  a_plex_theme(grid = FALSE) +
+  labs(title = "Freddie Andersen's Struggles", subtitle = "Freddie Andersen has been struggling recently, but has shown the ability to bounce back \nin previous seasons. In 2017 and 2019 his rolling 5 game save percentage dipped below \n.830 before recovering to higher levels.", caption = "chart by @MackinawStats, data from @EvolvingHockey",x = "Game", y = "SV% (Rolling)") +
+  ylim(80,100)
+  
+
+ggsave("fred2.pdf", width = 12)
+```
+
+

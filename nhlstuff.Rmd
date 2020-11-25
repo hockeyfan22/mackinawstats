@@ -1,0 +1,163 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "11/8/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+start = seq(from = 0, to = 8600, by = 100)
+
+base = 'https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D%5D&start='
+
+end = '&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D5%20and%20gameTypeId=2%20and%20seasonId%3C=20192020%20and%20seasonId%3E=20142015'
+
+paste = as.data.frame(start) %>% mutate(rep(base),
+                                rep(end),
+                                url = paste0(base,start,end))
+
+urls = paste$url
+
+data = map(urls, jsonlite::fromJSON)
+
+gamelog1415_1920 = plyr::rbind.fill(lapply(data,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  unnest(cols = data)
+```
+
+```{r}
+start = seq(from = 0, to = 8600, by = 100)
+
+base = 'https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D%5D&start='
+
+end = '&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D5%20and%20gameTypeId=2%20and%20seasonId%3C=20132014%20and%20seasonId%3E=20082009'
+
+paste = as.data.frame(start) %>% mutate(rep(base),
+                                rep(end),
+                                url = paste0(base,start,end))
+
+urls = paste$url
+
+data = map(urls, jsonlite::fromJSON)
+
+gamelog0809_1314 = plyr::rbind.fill(lapply(data,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  unnest(cols = data)
+```
+
+```{r}
+start = seq(from = 0, to = 8600, by = 100)
+
+base = 'https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D%5D&start='
+
+end = '&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D5%20and%20gameTypeId=2%20and%20seasonId%3C=20072008%20and%20seasonId%3E=20022003'
+
+paste = as.data.frame(start) %>% mutate(rep(base),
+                                rep(end),
+                                url = paste0(base,start,end))
+
+urls = paste$url
+
+data = map(urls, jsonlite::fromJSON)
+
+gamelog0203_0708 = plyr::rbind.fill(lapply(data,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  unnest(cols = data)
+```
+
+```{r}
+gamelog0203_0708 %>% 
+  bind_rows(gamelog0809_1314) %>% 
+  bind_rows(gamelog1415_1920) %>% 
+  mutate(gamedate = as.Date(gameDate)) %>% 
+  arrange(gamedate) %>% 
+  mutate(num = row_number()) %>% 
+  ggplot(aes(num,goals)) +
+  geom_point()
+
+#ggsave("goals.pdf", width =14, height = 10)
+```
+```{r}
+year = rep(1917:2019, each = 16)
+year2 = rep(1918:2020, each = 16)
+start = rep(seq(from = 0, to = 1500, by = 100), times = 103)
+
+data.frame(year,start)
+
+base = 'https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D%5D&start='
+
+end = '&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D5%20and%20gameTypeId=2%20and%20seasonId%3C='
+
+#year = 20192020
+
+end2 = '%20and%20seasonId%3E='
+
+#year = 20142015
+
+paste = data.frame(year,year2,start,base,end,end2) %>% 
+  mutate(url = paste0(base, start, end, year, year2, end2, year,year2))
+
+urls = paste$url
+
+data = map(urls, jsonlite::fromJSON)
+
+gamelog1415_1920 = plyr::rbind.fill(lapply(data,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  unnest(cols = data)
+```
+```{r}
+library(showtext)
+library(extrafont)
+library(awtools)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+gamelog1415_1920 %>% 
+  mutate(goalsc = as.character(goals)) %>% 
+  mutate(gamedate = as.Date(gameDate)) %>% 
+  arrange(gamedate) %>% 
+  mutate(num = row_number()) %>% 
+  mutate(year = lubridate::year(gamedate)) %>% 
+  ggplot(aes(num, goalsc)) +
+  geom_quasirandom(aes(color = goals),groupOnX = FALSE, alpha = 0.3, size = 3) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "Leaf's Player Goals Per Game, 1917-2020", subtitle = "Data from NHL.com", caption = "Chart by @MackinawStats", x = "Game #", y = "Goals Scored")
+
+ggsave('leafs.pdf')
+```
+
+```{r}
+gamelog1415_1920 %>% 
+  mutate(goalsc = as.character(goals)) %>% 
+  mutate(gamedate = as.Date(gameDate)) %>% 
+  arrange(gamedate) %>% 
+  mutate(num = row_number()) %>% 
+  mutate(year = lubridate::year(gamedate)) %>% 
+  ggplot(aes(gamedate, goalsc)) +
+  geom_quasirandom(aes(color = goals),groupOnX = FALSE, alpha = 0.3, size = 3) +
+  a_plex_theme(grid = FALSE) +
+  theme(legend.position = "none") +
+  labs(title = "Leaf's Player Goals Per Game, 1917-2020", subtitle = "Data from NHL.com", caption = "Chart by @MackinawStats", x = "Game #", y = "Goals Scored")
+
+ggsave('leafs2.pdf')
+```
+```{r}
+gamelog1415_1920 %>% 
+  mutate(goalsc = as.character(goals)) %>% 
+  mutate(gamedate = as.Date(gameDate)) %>% 
+  arrange(gamedate) %>% 
+  mutate(num = row_number()) %>% 
+  mutate(year = lubridate::year(gamedate)) %>% 
+  filter(goals == "6")
+```
+
+
+

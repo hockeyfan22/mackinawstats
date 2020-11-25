@@ -1,0 +1,53 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(downloader)
+library(tidyverse)
+download("http://peter-tanner.com/moneypuck/downloads/shots_2019.zip", dest="dataset.zip", mode="wb") 
+unzip ("dataset.zip", exdir = "C:\\Users\\ryang\\Documents\\NHL")
+shots = read_csv("shots_2019.csv")
+```
+
+```{r}
+rangers = shots %>% 
+  filter(game_id == 20593) %>% 
+  mutate(arenaAdjustedXCord = case_when(teamCode == "TOR" ~ abs(arenaAdjustedXCord),
+                                        teamCode != "TOR" ~ -abs(arenaAdjustedXCord),
+                                        TRUE ~ arenaAdjustedXCord)) %>% 
+  mutate(arenaAdjustedYCord = arenaAdjustedYCord * -1) %>% 
+  group_by(teamCode) %>% 
+  mutate(cum = cumsum(xGoal)) %>% 
+  ungroup() %>% 
+  mutate(goals = case_when(goal == 1 ~ cum,
+                           TRUE ~ 0))
+
+write_csv(rangers,"rangersrrr.csv")
+```
+```{r}
+rangers %>% 
+  select(shotID, cum, goals)
+```
+```{r}
+wild = shots %>% 
+  filter(game_id == 20633) %>% 
+  mutate(arenaAdjustedXCord = case_when(teamCode == "TOR" ~ abs(arenaAdjustedXCord),
+                                        teamCode != "TOR" ~ -abs(arenaAdjustedXCord),
+                                        TRUE ~ arenaAdjustedXCord)) %>% 
+  mutate(arenaAdjustedYCord = arenaAdjustedYCord * -1) %>% 
+  group_by(teamCode) %>% 
+  mutate(cum = cumsum(xGoal)) %>% 
+  ungroup() %>% 
+  mutate(goals = case_when(goal == 1 ~ cum,
+                           TRUE ~ 0))
+
+write_csv(wild,"wild.csv")
+```
+

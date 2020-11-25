@@ -1,0 +1,258 @@
+---
+title: "Untitled"
+author: "Visualizing Hockey"
+date: "9/2/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(tidyverse)
+library(awtools)
+library(hrbrthemes)
+library(ggthemes)
+library(ggbeeswarm)
+
+
+library(showtext)
+library(extrafont)
+
+font_add_google("IBM Plex Mono", "IBM Plex Mono")
+font_add_google("IBM Plex Sans", "IBM Plex Sans")
+
+showtext_auto()
+```
+
+```{r}
+teams = read_csv('https://evolving-hockey.com/session/3a89135ffa4c350e52829e598f26f0c9/download/std_tm_download?w=')
+```
+
+```{r}
+teams %>% 
+  mutate(
+         diffcf = `CF%` - 50,
+         diffxg = `xGF%` - 50) %>% 
+  filter(Name == "Avalanche" | Name == "Stars" | Name == "Lightning" | Name == "Bruins" | Name == "Islanders" | Name == "Flyers" | Name == "Golden Knights" | Name == "Canucks") %>% 
+  mutate(Name = fct_reorder(Name, `xGF%`)) %>% 
+  ggplot(aes(Name, `xGF%`)) +
+  geom_hline(yintercept = 50, color = "grey", size = 1.25) +
+  coord_flip() +
+  geom_segment(aes(x = Name, xend = Name, y = 50, yend = `xGF%`, color = Name), size = 1.5) +
+  geom_point(size = 3, aes(color = Name)) +
+  a_plex_theme() +
+  theme(legend.position = "none") +
+  ylim(45,60) +
+  labs(x = "") +
+  scale_color_tableau()
+
+ggsave('plotyyy.pdf')
+```
+```{r}
+regular = read_csv('seasondata.csv')
+playoffs = read_csv('playoffdata.csv')
+
+both = regular %>% 
+  rbind(playoffs)
+```
+```{r}
+both %>% 
+  filter(event_type == "GOAL") %>% 
+  group_by(session) %>% 
+  count(event_detail) %>% 
+  filter(!is.na(event_detail)) %>% 
+  mutate(sum = sum(n)) %>% 
+  mutate(percent = (n/sum) *100) %>% 
+  mutate(event_detail = fct_reorder(event_detail, percent)) %>% 
+  ungroup() %>% 
+  mutate(session = case_when(session == "P" ~ "Playoffs",
+                             session == "R" ~ "Regular Season")) %>% 
+  mutate(session = factor(session, levels =c("Regular Season", "Playoffs"))) %>% 
+  ggplot(aes(event_detail, percent)) +
+  geom_col(aes(fill = session)) +
+  scale_fill_tableau() +
+  facet_wrap(~session) +
+  coord_flip() +
+  a_plex_theme() +
+  geom_text(aes(label = round(percent)), hjust = -.25)+
+  ylim(0,60) +
+  labs(x= "Shot Type of Goal", y = "Percent") +
+  theme(legend.position = "none")
+
+ggsave('newsletterplot2.pdf')
+```
+```{r}
+both %>% 
+  filter(event_type == "PENL") %>% 
+  group_by(session) %>% 
+  count(event_type,game_id) %>% 
+  mutate(game_id = as.character(game_id)) %>% 
+  mutate(total = sum(n)) %>% 
+  ggplot(aes(n)) +
+  geom_histogram(binwidth = 1) +
+  facet_wrap(~session)
+```
+```{r}
+both %>% 
+  mutate(team = case_when(event_team == home_team ~ "Home",
+                          event_team == away_team ~ "Away")) %>% 
+  filter(event_type == "PENL") %>% 
+  count(session, event_type, game_id, team) %>% 
+  spread(team,n) %>% 
+  mutate(session = case_when(session == "P" ~ "Playoffs",
+                             session == "R" ~ "Regular Season")) %>% 
+  mutate(session = factor(session, levels =c("Regular Season", "Playoffs"))) %>% 
+  ggplot(aes(Away,Home)) +
+  geom_jitter(alpha = 0.35, aes(color = session)) +
+  facet_wrap(~session) +
+  a_plex_theme() +
+  geom_smooth(method = "lm", aes(color = session), se = FALSE) +
+  theme(legend.position = "none") +
+  labs(y= "Home Team Penalties", x = "Away Team Penalties") +
+  scale_color_tableau()
+
+ggsave('newsletterplot3.pdf')
+  
+```
+```{r}
+both %>% 
+  mutate(team = case_when(event_team == home_team ~ "Home",
+                          event_team == away_team ~ "Away")) %>% 
+  filter(event_type == "PENL") %>% 
+  count(session, event_type, game_id, team) %>% 
+  spread(team,n) %>% 
+  group_by(session) %>% 
+  summarize(meanh = mean(Home, na.rm = TRUE),
+            meana = mean(Away, na.rm = TRUE)) %>% 
+  mutate(total = meanh + meana) %>% 
+  mutate(total = round(total,2))
+```
+
+```{r}
+players = read_csv('https://evolving-hockey.com/session/1b2e6c3a3d13314ed4e9daae343c9f0f/download/std_sk_download?w=')
+```
+
+```{r}
+table = players %>% 
+  mutate(A = A1 + A2) %>% 
+  select(Player,Points, Goals = "G", Assists = "A") %>% 
+  arrange(desc(Points)) %>% 
+  head(10)
+```
+
+```{r}
+library(htmltools)
+
+# Render a bar chart with a label on the left
+bar_chart <- function(label, width = "100%", height = "14px", fill = "#00bfc4", background = NULL) {
+  bar <- div(style = list(background = fill, width = width, height = height))
+  chart <- div(style = list(flexGrow = 1, marginLeft = "6px", background = background), bar)
+  div(style = list(display = "flex", alignItems = "center"), label, chart)
+}
+
+
+reactable(table,
+          showSortIcon = FALSE,
+  compact = TRUE,
+  pagination = FALSE,
+  defaultColDef = colDef(
+    headerStyle = list(
+      textAlign = "left",
+      fontSize = "11px",
+      lineHeight = "14px",
+      textTransform = "uppercase",
+      color = "#0c0c0c",
+      fontWeight = "500",
+      borderBottom = "2px solid #e9edf0",
+      paddingBottom = "3px",
+      verticalAlign = "bottom",
+      fontFamily = font_es
+    ),
+    style = list(
+      fontFamily = font_es,
+      fontSize = "14px",
+      verticalAlign = "center",
+      align = "left"
+    )
+  ),
+          columns = list(
+            Player = colDef(
+      name = "Player",
+      maxWidth = 150),
+    Points = colDef(
+      name = "Points",
+      maxWidth = 100,
+      defaultSortOrder = "desc",
+      # Render the bar charts using a custom cell render function
+      cell = function(value) {
+        width <- value *2
+        bar_chart(value, width = width, fill = "#ffc93c")
+      },
+      # And left-align the columns
+      align = "left"
+    ),
+     Goals = colDef(
+      name = "Goals",
+      defaultSortOrder = "desc",
+      maxWidth = 100,
+      # Render the bar charts using a custom cell render function
+      cell = function(value) {
+        width <- value * 2
+        bar_chart(value, width = width, fill = "#07689f")
+      },
+      # And left-align the columns
+      align = "left"
+    ),
+     Assists = colDef(
+      name = "Assists",
+      maxWidth = 100,
+      defaultSortOrder = "desc",
+      # Render the bar charts using a custom cell render function
+      cell = function(value) {
+        width <- value *2
+        bar_chart(value, width = width, fill = "#40a8c4")
+      },
+      # And left-align the columns
+      align = "left"
+    )))
+```
+```{r}
+table = read_csv('https://evolving-hockey.com/session/fb983920e639018b1941741c06985328/download/std_tm_download?w=')
+
+table = table %>% 
+  select(Name, `xGA/60`) %>% 
+  arrange(`xGA/60`)
+```
+
+```{r}
+x = table %>% 
+  head(10) %>% 
+  gt() %>% 
+    tab_style(
+    style = list(
+      cell_fill(color = scales::alpha("dark green", 0.7)),
+      cell_text(color = "white", weight = "bold")
+      ),
+    locations = list(
+      cells_body(
+        columns = 2,
+        rows = `Name` == "Stars"
+      ))) %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = scales::alpha("#002868", 0.7)),
+      cell_text(color = "white", weight = "bold")
+      ),
+    locations = list(
+      cells_body(
+        columns = 2,
+        rows = `Name` == "Lightning"
+      ))) %>% 
+  tab_header(
+    title = md("**Top 10 NHL Defenses**"),
+    subtitle = "By EvolvingHockey xGA/60"
+    ) 
+
+gtsave(x, 'defensetable.pdf')
+```
+
